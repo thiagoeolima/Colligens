@@ -1,0 +1,5 @@
+To Verify!
+
+- Conditions -> Apache -> mod_charset_lite
+- Wrappers -> Apache -> prefork
+- Functions -> BC -> bc-number

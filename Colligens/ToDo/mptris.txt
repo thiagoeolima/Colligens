@@ -1,0 +1,125 @@
+mptris
+
+dcigettext.c (SYNTAX ERROR
+
+
+  if (
+# ifdef _LIBC
+      domain->conv != (__gconv_t) -1
+# else
+#  if HAVE_ICONV
+      domain->conv != (iconv_t) -1
+#  endif
+# endif
+      )
+    {
+    //code
+    }
+    
+    
+    #ifdef LC_COLLATE
+  case LC_COLLATE:
+    retval = "LC_COLLATE";
+    break;
+#endif
+
+#ifdef LC_CTYPE
+  case LC_CTYPE:
+    retval = "LC_CTYPE";
+    break;
+#endif
+
+#ifdef LC_MONETARY
+  case LC_MONETARY:
+    retval = "LC_MONETARY";
+    break;
+#endif
+
+#ifdef LC_NUMERIC
+  case LC_NUMERIC:
+    retval = "LC_NUMERIC";
+    break;
+#endif
+
+#ifdef LC_TIME
+  case LC_TIME:
+    retval = "LC_TIME";
+    break;
+#endif
+
+#ifdef LC_MESSAGES
+  case LC_MESSAGES:
+    retval = "LC_MESSAGES";
+    break;
+#endif
+
+#ifdef LC_RESPONSE
+  case LC_RESPONSE:
+    retval = "LC_RESPONSE";
+    break;
+#endif
+
+#ifdef LC_ALL
+  case LC_ALL:
+    /* This might not make sense but is perhaps better than any other
+       value.  */
+    retval = "LC_ALL";
+    break;
+#endif
+
+
+
+libgnuintl.h
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+loadmsgcat.c
+
+
+    
+    
+    
+    #ifdef HAVE_MMAP
+      if (use_mmap)
+	munmap ((caddr_t) data, size);
+      else
+#endif
+	free (data);
+	
+	
+	
+	      /* This is an invalid revision.  */
+#ifdef HAVE_MMAP
+      if (use_mmap)
+	munmap ((caddr_t) data, size);
+      else
+#endif
+	free (data);
+	
+	
+	
+	# ifdef _POSIX_MAPPED_FILES
+  if (domain->use_mmap)
+    munmap ((caddr_t) domain->data, domain->mmap_size);
+  else
+# endif	/* _POSIX_MAPPED_FILES */
+    free ((void *) domain->data);
+    
+    
+    cmdline.h
+    
+    #ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */

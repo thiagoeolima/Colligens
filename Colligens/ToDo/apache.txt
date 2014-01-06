@@ -1,0 +1,1741 @@
+// mod_authnz_ldap.c
+
+// Manual
+return (LDAP_NO_SUCH_OBJECT == result) ? AUTH_USER_NOT_FOUND
+#ifdef LDAP_SECURITY_ERROR
+                 : (LDAP_SECURITY_ERROR(result)) ? AUTH_DENIED
+#else
+                 : (LDAP_INAPPROPRIATE_AUTH == result) ? AUTH_DENIED
+                 : (LDAP_INVALID_CREDENTIALS == result) ? AUTH_DENIED
+#ifdef LDAP_INSUFFICIENT_ACCESS
+                 : (LDAP_INSUFFICIENT_ACCESS == result) ? AUTH_DENIED
+#endif
+#ifdef LDAP_INSUFFICIENT_RIGHTS
+                 : (LDAP_INSUFFICIENT_RIGHTS == result) ? AUTH_DENIED
+#endif
+#endif
+#ifdef LDAP_CONSTRAINT_VIOLATION
+    /* At least Sun Directory Server sends this if a user is
+     * locked. This is not covered by LDAP_SECURITY_ERROR.
+     */
+                 : (LDAP_CONSTRAINT_VIOLATION == result) ? AUTH_DENIED
+#endif
+                 : AUTH_GENERAL_ERROR;
+                 
+                 
+                 
+// mod_authz_core.c
+
+// NAO
+static const command_rec authz_cmds[] =
+{
+    AP_INIT_RAW_ARGS("<AuthzProviderAlias", authz_require_alias_section,
+                     NULL, RSRC_CONF,
+                     "container for grouping an authorization provider's "
+                     "directives under a provider alias"),
+    AP_INIT_RAW_ARGS("Require", add_authz_provider, NULL, OR_AUTHCFG,
+                     "specifies authorization directives "
+                     "which one must pass (or not) for a request to suceeed"),
+    AP_INIT_RAW_ARGS("<RequireAll", add_authz_section, NULL, OR_AUTHCFG,
+                     "container for grouping authorization directives "
+                     "of which none must fail and at least one must pass "
+                     "for a request to succeed"),
+    AP_INIT_RAW_ARGS("<RequireAny", add_authz_section, NULL, OR_AUTHCFG,
+                     "container for grouping authorization directives "
+                     "of which one must pass "
+                     "for a request to succeed"),
+#ifdef AUTHZ_EXTRA_CONFIGS
+    AP_INIT_RAW_ARGS("<RequireNotAll", add_authz_section, NULL, OR_AUTHCFG,
+                     "container for grouping authorization directives "
+                     "of which some must fail or none must pass "
+                     "for a request to succeed"),
+#endif
+    AP_INIT_RAW_ARGS("<RequireNone", add_authz_section, NULL, OR_AUTHCFG,
+                     "container for grouping authorization directives "
+                     "of which none must pass "
+                     "for a request to succeed"),
+    AP_INIT_TAKE1("AuthMerging", authz_merge_sections, NULL, OR_AUTHCFG,
+                  "controls how a <Directory>, <Location>, or similar "
+                  "directive's authorization directives are combined with "
+                  "those of its predecessor"),
+    AP_INIT_FLAG("AuthzSendForbiddenOnFailure", ap_set_flag_slot_char,
+                 (void *)APR_OFFSETOF(authz_core_dir_conf, authz_forbidden_on_fail),
+                 OR_AUTHCFG,
+                 "Controls if an authorization failure should result in a "
+                 "'403 FORBIDDEN' response instead of the HTTP-conforming "
+                 "'401 UNAUTHORIZED'"),
+    {NULL}
+};
+
+
+
+     
+     
+     
+// mod_privilegies.c
+static const command_rec privileges_cmds[] = {
+    AP_INIT_TAKE1("VHostUser", vhost_user, NULL, RSRC_CONF,
+                  "Userid under which the virtualhost will run"),
+    AP_INIT_TAKE1("VHostGroup", vhost_group, NULL, RSRC_CONF,
+                  "Group under which the virtualhost will run"),
+    AP_INIT_FLAG("VHostSecure", vhost_secure, NULL, RSRC_CONF,
+                 "Run in enhanced security mode (default ON)"),
+    AP_INIT_TAKE1("VHostCGIMode", vhost_cgimode, NULL, RSRC_CONF,
+                  "Enable fork+exec for this virtualhost (Off|Secure|On)"),
+    AP_INIT_FLAG("DTracePrivileges", dtraceenable, NULL, RSRC_CONF,
+                 "Enable DTrace"),
+    AP_INIT_TAKE1("PrivilegesMode", privs_mode, NULL, RSRC_CONF|ACCESS_CONF,
+                  "tradeoff performance vs security (fast or secure)"),
+#ifdef BIG_SECURITY_HOLE
+    AP_INIT_ITERATE("VHostPrivs", vhost_privs, NULL, RSRC_CONF,
+                    "Privileges available in the (virtual) server"),
+    AP_INIT_ITERATE("VHostCGIPrivs", vhost_cgiprivs, NULL, RSRC_CONF,
+                    "Privileges available to external programs"),
+#endif
+    {NULL}
+};
+
+    
+    
+                                
+                                
+                                
+repos.c
+
+static const dav_hooks_repository dav_hooks_repository_fs =
+{
+    DEBUG_GET_HANDLER,   /* normally: special GET handling not required */
+    dav_fs_get_resource,
+    dav_fs_get_parent_resource,
+    dav_fs_is_same_resource,
+    dav_fs_is_parent_resource,
+    dav_fs_open_stream,
+    dav_fs_close_stream,
+    dav_fs_write_stream,
+    dav_fs_seek_stream,
+#if DEBUG_GET_HANDLER
+    dav_fs_set_headers,
+    dav_fs_deliver,
+#else
+    NULL,
+    NULL,
+#endif
+    dav_fs_create_collection,
+    dav_fs_copy_resource,
+    dav_fs_move_resource,
+    dav_fs_remove_resource,
+    dav_fs_walk,
+    dav_fs_getetag,
+    NULL,
+    dav_fs_get_request_rec,
+    dav_fs_pathname
+};
+
+
+
+props.c
+    
+    
+    // FALTA
+    if (priv->propid != DAV_PROPID_CORE_UNKNOWN) {
+
+            /* insert the property. returns 1 if an insertion was done. */
+            if ((err = dav_insert_liveprop(propdb, elem, DAV_PROP_INSERT_VALUE,
+                                           &hdr_good, &inserted)) != NULL) {
+                /* ### need to propagate the error to the caller... */
+                /* ### skip it for now, as if nothing was inserted */
+            }
+            if (inserted == DAV_PROP_INSERT_VALUE) {
+                have_good = 1;
+
+                /*
+                ** Add the liveprop's namespace URIs. Note that provider==NULL
+                ** for core properties.
+                */
+                if (priv->provider != NULL) {
+                    const char * const * scan_ns_uri;
+
+                    for (scan_ns_uri = priv->provider->namespace_uris;
+                         *scan_ns_uri != NULL;
+                         ++scan_ns_uri) {
+                        long ns;
+
+                        ns = dav_get_liveprop_ns_index(*scan_ns_uri);
+                        if (marks_liveprop[ns])
+                            continue;
+                        marks_liveprop[ns] = 1;
+
+                        dav_insert_xmlns(propdb->p, "lp", ns, *scan_ns_uri,
+                                         &hdr_ns);
+                    }
+                }
+
+                /* property added. move on to the next property. */
+                continue;
+            }
+            else if (inserted == DAV_PROP_INSERT_NOTDEF) {
+                /* nothing to do. fall thru to allow property to be handled
+                   as a dead property */
+            }
+#if DAV_DEBUG
+            else {
+#if 0
+                /* ### need to change signature to return an error */
+                return dav_new_error(propdb->p, HTTP_INTERNAL_SERVER_ERROR, 0,
+                                     0,
+                                     "INTERNAL DESIGN ERROR: insert_liveprop "
+                                     "did not insert what was asked for.");
+#endif
+            }
+#endif
+        }
+        
+        
+        
+        
+        
+       
+    
+    
+    
+mod_filter.c
+
+static const command_rec filter_cmds[] = {
+    AP_INIT_TAKE12("FilterDeclare", filter_declare, NULL, OR_OPTIONS,
+        "filter-name [filter-type]"),
+    AP_INIT_TAKE3("FilterProvider", filter_provider, NULL, OR_OPTIONS,
+        "filter-name provider-name match-expression"),
+    AP_INIT_ITERATE("FilterChain", filter_chain, NULL, OR_OPTIONS,
+        "list of filter names with optional [+-=!@]"),
+    AP_INIT_TAKE2("FilterTrace", filter_debug, NULL, RSRC_CONF | ACCESS_CONF,
+        "filter-name debug-level"),
+    AP_INIT_TAKE_ARGV("AddOutputFilterByType", filter_bytype, NULL, OR_FILEINFO,
+        "output filter name followed by one or more content-types"),
+#ifndef NO_PROTOCOL
+    AP_INIT_TAKE23("FilterProtocol", filter_protocol, NULL, OR_OPTIONS,
+        "filter-name [provider-name] protocol-args"),
+#endif
+    { NULL }
+};
+
+
+                       
+                      
+    
+    
+mod_cgi.c
+
+
+                    
+                    
+     // MANUAL               
+if (((rc = apr_procattr_create(&procattr, p)) != APR_SUCCESS) ||
+        ((rc = apr_procattr_io_set(procattr,
+                                   e_info->in_pipe,
+                                   e_info->out_pipe,
+                                   e_info->err_pipe)) != APR_SUCCESS) ||
+        ((rc = apr_procattr_dir_set(procattr,
+                        ap_make_dirstr_parent(r->pool,
+                                              r->filename))) != APR_SUCCESS) ||
+#if defined(RLIMIT_CPU) && defined(AP_CGI_USE_RLIMIT)
+        ((rc = apr_procattr_limit_set(procattr, APR_LIMIT_CPU,
+                                      conf->limit_cpu)) != APR_SUCCESS) ||
+#endif
+#if defined(AP_CGI_USE_RLIMIT) && (defined(RLIMIT_DATA) || defined(RLIMIT_VMEM) || defined(RLIMIT_AS))
+        ((rc = apr_procattr_limit_set(procattr, APR_LIMIT_MEM,
+                                      conf->limit_mem)) != APR_SUCCESS) ||
+#endif
+#if RLIMIT_NPROC && defined(AP_CGI_USE_RLIMIT)
+        ((rc = apr_procattr_limit_set(procattr, APR_LIMIT_NPROC,
+                                      conf->limit_nproc)) != APR_SUCCESS) ||
+#endif
+        ((rc = apr_procattr_cmdtype_set(procattr,
+                                        e_info->cmd_type)) != APR_SUCCESS) ||
+
+        ((rc = apr_procattr_detach_set(procattr,
+                                        e_info->detached)) != APR_SUCCESS) ||
+        ((rc = apr_procattr_addrspace_set(procattr,
+                                        e_info->addrspace)) != APR_SUCCESS) ||
+        ((rc = apr_procattr_child_errfn_set(procattr, cgi_child_errfn)) != APR_SUCCESS)) {
+        /* Something bad happened, tell the world. */
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rc, r, APLOGNO(01216)
+                      "couldn't set child process attributes: %s", r->filename);
+    }
+    
+    
+    
+mod_cgid.c
+// MANUAL
+if (((rc = apr_procattr_create(&procattr, ptrans)) != APR_SUCCESS) ||
+            ((cgid_req.req_type == CGI_REQ) &&
+             (((rc = apr_procattr_io_set(procattr,
+                                        in_pipe,
+                                        out_pipe,
+                                        err_pipe)) != APR_SUCCESS) ||
+              /* XXX apr_procattr_child_*_set() is creating an unnecessary
+               * pipe between this process and the child being created...
+               * It is cleaned up with the temporary pool for this request.
+               */
+              ((rc = apr_procattr_child_err_set(procattr, r->server->error_log, NULL)) != APR_SUCCESS) ||
+              ((rc = apr_procattr_child_in_set(procattr, inout, NULL)) != APR_SUCCESS))) ||
+            ((rc = apr_procattr_child_out_set(procattr, inout, NULL)) != APR_SUCCESS) ||
+            ((rc = apr_procattr_dir_set(procattr,
+                                  ap_make_dirstr_parent(r->pool, r->filename))) != APR_SUCCESS) ||
+            ((rc = apr_procattr_cmdtype_set(procattr, cmd_type)) != APR_SUCCESS) ||
+#ifdef AP_CGID_USE_RLIMIT
+#ifdef RLIMIT_CPU
+        (  (cgid_req.limits.limit_cpu_set) && ((rc = apr_procattr_limit_set(procattr, APR_LIMIT_CPU,
+                                      &cgid_req.limits.limit_cpu)) != APR_SUCCESS)) ||
+#endif
+#if defined(RLIMIT_DATA) || defined(RLIMIT_VMEM) || defined(RLIMIT_AS)
+        ( (cgid_req.limits.limit_mem_set) && ((rc = apr_procattr_limit_set(procattr, APR_LIMIT_MEM,
+                                      &cgid_req.limits.limit_mem)) != APR_SUCCESS)) ||
+#endif
+#ifdef RLIMIT_NPROC
+        ( (cgid_req.limits.limit_nproc_set) && ((rc = apr_procattr_limit_set(procattr, APR_LIMIT_NPROC,
+                                      &cgid_req.limits.limit_nproc)) != APR_SUCCESS)) ||
+#endif
+#endif
+
+            ((rc = apr_procattr_child_errfn_set(procattr, cgid_child_errfn)) != APR_SUCCESS)) {
+            /* Something bad happened, tell the world.
+             * ap_log_rerror() won't work because the header table used by
+             * ap_log_rerror() hasn't been replicated in the phony r
+             */
+            ap_log_error(APLOG_MARK, APLOG_ERR, rc, r->server, APLOGNO(01251)
+                         "couldn't set child process attributes: %s", r->filename);
+
+            procnew->pid = 0; /* no process to clean up */
+            close(sd2);
+        }
+        
+        
+        
+        
+        
+mod_info.c
+// FALTA
+typedef apr_array_header_t *(
+#ifdef WIN32
+                                __stdcall
+#endif
+                                * hook_get_t)      (void);
+                                
+                               
+
+
+
+
+
+util_ldap.c
+
+    
+    
+    // MANUAL
+#if APR_HAS_THREADS
+        if (APR_SUCCESS == apr_thread_mutex_trylock(l->lock)) {
+#endif
+        if (   (l->port == port) && (strcmp(l->host, host) == 0)
+            && ((!l->binddn && !binddn) || (l->binddn && binddn
+                                             && !strcmp(l->binddn, binddn)))
+            && ((!l->bindpw && !bindpw) || (l->bindpw && bindpw
+                                             && !strcmp(l->bindpw, bindpw)))
+            && (l->deref == deref) && (l->secure == secureflag)
+            && !compare_client_certs(dc->client_certs, l->client_certs))
+        {
+            if (st->connection_pool_ttl > 0) {
+                if (l->bound && (now - l->freed) > st->connection_pool_ttl) {
+                    ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r,
+                                  "Removing LDAP connection last used %" APR_TIME_T_FMT " seconds ago",
+                                  (now - l->freed) / APR_USEC_PER_SEC);
+                    uldap_connection_unbind(l);
+                    /* Go ahead (by falling through) and use it, so we don't create more just to unbind some other old ones */
+                }
+            }
+            break;
+        }
+#if APR_HAS_THREADS
+            /* If this connection didn't match the criteria, then we
+             * need to unlock the mutex so it is available to be reused.
+             */
+            apr_thread_mutex_unlock(l->lock);
+        }
+#endif
+
+
+
+// Manual
+#if APR_HAS_THREADS
+            if (APR_SUCCESS == apr_thread_mutex_trylock(l->lock)) {
+
+#endif
+            if ((l->port == port) && (strcmp(l->host, host) == 0) &&
+                (l->deref == deref) && (l->secure == secureflag) &&
+                !compare_client_certs(dc->client_certs, l->client_certs))
+            {
+                /* the bind credentials have changed */
+                /* no check for connection_pool_ttl, since we are unbinding any way */
+                uldap_connection_unbind(l);
+
+                util_ldap_strdup((char**)&(l->binddn), binddn);
+                util_ldap_strdup((char**)&(l->bindpw), bindpw);
+                break;
+            }
+#if APR_HAS_THREADS
+                /* If this connection didn't match the criteria, then we
+                 * need to unlock the mutex so it is available to be reused.
+                 */
+                apr_thread_mutex_unlock(l->lock);
+            }
+#endif
+
+
+
+
+// MANUAL
+#if APR_HAS_SHARED_MEMORY
+    /*
+     * initializing cache if we don't already have a shm address
+     */
+    if (!st->cache_shm) {
+#endif
+        result = util_ldap_cache_init(p, st);
+        if (result != APR_SUCCESS) {
+            ap_log_error(APLOG_MARK, APLOG_ERR, result, s, APLOGNO(01315)
+                         "LDAP cache: could not create shared memory segment");
+            return DONE;
+        }
+
+        result = ap_global_mutex_create(&st->util_ldap_cache_lock, NULL,
+                                        ldap_cache_mutex_type, NULL, s, p, 0);
+        if (result != APR_SUCCESS) {
+            return result;
+        }
+
+        /* merge config in all vhost */
+        s_vhost = s->next;
+        while (s_vhost) {
+            st_vhost = (util_ldap_state_t *)
+                       ap_get_module_config(s_vhost->module_config,
+                                            &ldap_module);
+
+#if APR_HAS_SHARED_MEMORY
+            st_vhost->cache_shm = st->cache_shm;
+            st_vhost->cache_rmm = st->cache_rmm;
+            st_vhost->cache_file = st->cache_file;
+            st_vhost->util_ldap_cache = st->util_ldap_cache;
+            ap_log_error(APLOG_MARK, APLOG_DEBUG, result, s, APLOGNO(01316)
+                         "LDAP merging Shared Cache conf: shm=0x%pp rmm=0x%pp "
+                         "for VHOST: %s", st->cache_shm, st->cache_rmm,
+                         s_vhost->server_hostname);
+#endif
+            s_vhost = s_vhost->next;
+        }
+#if APR_HAS_SHARED_MEMORY
+    }
+    else {
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(01317)
+                     "LDAP cache: LDAPSharedCacheSize is zero, disabling "
+                     "shared memory cache");
+    }
+#endif
+
+
+mod_log_config.c
+                            
+                            
+                            
+  // FALTA                          
+#if APR_HAS_THREADS
+            if (mpm_threads > 1) {
+                apr_status_t rv;
+
+                this->mutex.type = apr_anylock_threadmutex;
+                rv = apr_thread_mutex_create(&this->mutex.lock.tm,
+                                             APR_THREAD_MUTEX_DEFAULT,
+                                             p);
+                if (rv != APR_SUCCESS) {
+                    ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s, APLOGNO(00647)
+                                 "could not initialize buffered log mutex, "
+                                 "transfer log may become corrupted");
+                    this->mutex.type = apr_anylock_none;
+                }
+            }
+            else
+#endif
+            {
+                this->mutex.type = apr_anylock_none;
+            }
+            
+            
+          
+                            
+                            
+
+                
+                
+                
+                
+                
+mod_mime_magic.c
+
+static const struct names {
+    const char *name;
+    short type;
+} names[] = {
+
+    /* These must be sorted by eye for optimal hit rate */
+    /* Add to this list only after substantial meditation */
+    {
+        "<html>", L_HTML
+    },
+    {
+        "<HTML>", L_HTML
+    },
+    {
+        "<head>", L_HTML
+    },
+    {
+        "<HEAD>", L_HTML
+    },
+    {
+        "<title>", L_HTML
+    },
+    {
+        "<TITLE>", L_HTML
+    },
+    {
+        "<h1>", L_HTML
+    },
+    {
+        "<H1>", L_HTML
+    },
+    {
+        "<!--", L_HTML
+    },
+    {
+        "<!DOCTYPE HTML", L_HTML
+    },
+    {
+        "/*", L_C
+    },               /* must precede "The", "the", etc. */
+    {
+//        "#include", L_C
+    },
+    {
+        "char", L_C
+    },
+    {
+        "The", L_ENG
+    },
+    {
+        "the", L_ENG
+    },
+    {
+        "double", L_C
+    },
+    {
+        "extern", L_C
+    },
+    {
+        "float", L_C
+    },
+    {
+        "real", L_C
+    },
+    {
+        "struct", L_C
+    },
+    {
+        "union", L_C
+    },
+    {
+        "CFLAGS", L_MAKE
+    },
+    {
+        "LDFLAGS", L_MAKE
+    },
+    {
+        "all:", L_MAKE
+    },
+    {
+        ".PRECIOUS", L_MAKE
+    },
+    /*
+     * Too many files of text have these words in them.  Find another way to
+     * recognize Fortrash.
+     */
+#ifdef    NOTDEF
+    {
+        "subroutine", L_FORT
+    },
+    {
+        "function", L_FORT
+    },
+    {
+        "block", L_FORT
+    },
+    {
+        "common", L_FORT
+    },
+    {
+        "dimension", L_FORT
+    },
+    {
+        "integer", L_FORT
+    },
+    {
+        "data", L_FORT
+    },
+#endif /* NOTDEF */
+    {
+        ".ascii", L_MACH
+    },
+    {
+        ".asciiz", L_MACH
+    },
+    {
+        ".byte", L_MACH
+    },
+    {
+        ".even", L_MACH
+    },
+    {
+        ".globl", L_MACH
+    },
+    {
+        "clr", L_MACH
+    },
+    {
+        "(input,", L_PAS
+    },
+    {
+        "dcl", L_PLI
+    },
+    {
+        "Received:", L_MAIL
+    },
+    {
+        ">From", L_MAIL
+    },
+    {
+        "Return-Path:", L_MAIL
+    },
+    {
+        "Cc:", L_MAIL
+    },
+    {
+        "Newsgroups:", L_NEWS
+    },
+    {
+        "Path:", L_NEWS
+    },
+    {
+        "Organization:", L_NEWS
+    },
+    {
+        NULL, 0
+    }
+};
+
+
+        
+        
+mod_unique_id.c
+
+// COLOCANDO UM ; A MAIS
+#if APR_HAVE_IPV6
+        if ((rv = apr_sockaddr_info_get(&sockaddr, str, AF_INET6, 0, 0, p)) == APR_SUCCESS) {
+            memcpy(&global_in_addr,
+                   (char *)sockaddr->ipaddr_ptr + sockaddr->ipaddr_len - sizeof(global_in_addr),
+                   sizeof(global_in_addr));
+            ap_log_error(APLOG_MARK, APLOG_ALERT, rv, main_server, APLOGNO(01565)
+                         "using low-order bits of IPv6 address "
+                         "as if they were unique");
+        }
+        else
+#endif
+        return HTTP_INTERNAL_SERVER_ERROR;
+        
+        
+mod_proxy_ftp.c
+
+#if !APR_CHARSET_EBCDIC
+        if (ch == '\015' || ch == '\012' || (ch & 0x80))
+#else                           /* APR_CHARSET_EBCDIC */
+        if (ch == '\r' || ch == '\n')
+            return 0;
+        buf[0] = ch;
+        ap_xlate_proto_to_ascii(buf, 1);
+        if (buf[0] & 0x80)
+#endif                          /* APR_CHARSET_EBCDIC */
+            return 0;
+    }
+    
+    
+proxy_util.c
+
+// FALTA
+if (This->addr.s_addr == (addr.s_addr & This->mask.s_addr)) {
+#if DEBUGGING
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00903)
+                         "1)IP-Match: %s[%s] <-> ", host, inet_ntoa(addr));
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00904)
+                         "%s/", inet_ntoa(This->addr));
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00905)
+                         "%s", inet_ntoa(This->mask));
+#endif
+            return 1;
+        }
+#if DEBUGGING
+        else {
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00906)
+                         "1)IP-NoMatch: %s[%s] <-> ", host, inet_ntoa(addr));
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00907)
+                         "%s/", inet_ntoa(This->addr));
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00908)
+                         "%s", inet_ntoa(This->mask));
+        }
+#endif
+
+
+// MANUAL
+ if (This->addr.s_addr == (ip->s_addr & This->mask.s_addr)) {
+#if DEBUGGING
+                ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00910)
+                             "3)IP-Match: %s[%s] <-> ", host, inet_ntoa(*ip));
+                ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00911)
+                             "%s/", inet_ntoa(This->addr));
+                ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00912)
+                             "%s", inet_ntoa(This->mask));
+#endif
+                return 1;
+            }
+#if DEBUGGING
+            else {
+                ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00913)
+                             "3)IP-NoMatch: %s[%s] <-> ", host, inet_ntoa(*ip));
+                ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00914)
+                             "%s/", inet_ntoa(This->addr));
+                ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00915)
+                             "%s", inet_ntoa(This->mask));
+            }
+#endif
+
+
+
+mod_ssl.c
+
+//FALTA
+static const command_rec ssl_config_cmds[] = {
+    /*
+     * Global (main-server) context configuration directives
+     */
+    SSL_CMD_SRV(PassPhraseDialog, TAKE1,
+                "SSL dialog mechanism for the pass phrase query "
+                "('builtin', '|/path/to/pipe_program', "
+                "or 'exec:/path/to/cgi_program')")
+    SSL_CMD_SRV(SessionCache, TAKE1,
+                "SSL Session Cache storage "
+                "('none', 'nonenotnull', 'dbm:/path/to/file')")
+#if defined(HAVE_OPENSSL_ENGINE_H) && defined(HAVE_ENGINE_INIT)
+    SSL_CMD_SRV(CryptoDevice, TAKE1,
+                "SSL external Crypto Device usage "
+                "('builtin', '...')")
+#endif
+    SSL_CMD_SRV(RandomSeed, TAKE23,
+                "SSL Pseudo Random Number Generator (PRNG) seeding source "
+                "('startup|connect builtin|file:/path|exec:/path [bytes]')")
+
+    /*
+     * Per-server context configuration directives
+     */
+    SSL_CMD_SRV(Engine, TAKE1,
+                "SSL switch for the protocol engine "
+                "('on', 'off')")
+    SSL_CMD_SRV(FIPS, FLAG,
+                "Enable FIPS-140 mode "
+                "(`on', `off')")
+    SSL_CMD_ALL(CipherSuite, TAKE1,
+                "Colon-delimited list of permitted SSL Ciphers "
+                "('XXX:...:XXX' - see manual)")
+    SSL_CMD_SRV(CertificateFile, TAKE1,
+                "SSL Server Certificate file "
+                "('/path/to/file' - PEM or DER encoded)")
+    SSL_CMD_SRV(CertificateKeyFile, TAKE1,
+                "SSL Server Private Key file "
+                "('/path/to/file' - PEM or DER encoded)")
+    SSL_CMD_SRV(CertificateChainFile, TAKE1,
+                "SSL Server CA Certificate Chain file "
+                "('/path/to/file' - PEM encoded)")
+    SSL_CMD_SRV(PKCS7CertificateFile, TAKE1,
+                "PKCS#7 file containing server certificate and chain"
+                " certificates ('/path/to/file' - PEM encoded)")
+#ifdef HAVE_TLS_SESSION_TICKETS
+    SSL_CMD_SRV(SessionTicketKeyFile, TAKE1,
+                "TLS session ticket encryption/decryption key file (RFC 5077) "
+                "('/path/to/file' - file with 48 bytes of random data)")
+#endif
+    SSL_CMD_ALL(CACertificatePath, TAKE1,
+                "SSL CA Certificate path "
+                "('/path/to/dir' - contains PEM encoded files)")
+    SSL_CMD_ALL(CACertificateFile, TAKE1,
+                "SSL CA Certificate file "
+                "('/path/to/file' - PEM encoded)")
+    SSL_CMD_SRV(CADNRequestPath, TAKE1,
+                "SSL CA Distinguished Name path "
+                "('/path/to/dir' - symlink hashes to PEM of acceptable CA names to request)")
+    SSL_CMD_SRV(CADNRequestFile, TAKE1,
+                "SSL CA Distinguished Name file "
+                "('/path/to/file' - PEM encoded to derive acceptable CA names to request)")
+    SSL_CMD_SRV(CARevocationPath, TAKE1,
+                "SSL CA Certificate Revocation List (CRL) path "
+                "('/path/to/dir' - contains PEM encoded files)")
+    SSL_CMD_SRV(CARevocationFile, TAKE1,
+                "SSL CA Certificate Revocation List (CRL) file "
+                "('/path/to/file' - PEM encoded)")
+    SSL_CMD_SRV(CARevocationCheck, TAKE1,
+                "SSL CA Certificate Revocation List (CRL) checking mode")
+    SSL_CMD_ALL(VerifyClient, TAKE1,
+                "SSL Client verify type "
+                "('none', 'optional', 'require', 'optional_no_ca')")
+    SSL_CMD_ALL(VerifyDepth, TAKE1,
+                "SSL Client verify depth "
+                "('N' - number of intermediate certificates)")
+    SSL_CMD_SRV(SessionCacheTimeout, TAKE1,
+                "SSL Session Cache object lifetime "
+                "('N' - number of seconds)")
+#ifdef HAVE_TLSV1_X
+#define SSL_PROTOCOLS "SSLv3|TLSv1|TLSv1.1|TLSv1.2"
+#else
+#define SSL_PROTOCOLS "SSLv3|TLSv1"
+#endif
+    SSL_CMD_SRV(Protocol, RAW_ARGS,
+                "Enable or disable various SSL protocols "
+                "('[+-][" SSL_PROTOCOLS "] ...' - see manual)")
+    SSL_CMD_SRV(HonorCipherOrder, FLAG,
+                "Use the server's cipher ordering preference")
+    SSL_CMD_SRV(Compression, FLAG,
+                "Enable SSL level compression"
+                "(`on', `off')")
+    SSL_CMD_SRV(InsecureRenegotiation, FLAG,
+                "Enable support for insecure renegotiation")
+    SSL_CMD_ALL(UserName, TAKE1,
+                "Set user name to SSL variable value")
+    SSL_CMD_SRV(StrictSNIVHostCheck, FLAG,
+                "Strict SNI virtual host checking")
+
+    /*
+     * Proxy configuration for remote SSL connections
+     */
+    SSL_CMD_SRV(ProxyEngine, FLAG,
+                "SSL switch for the proxy protocol engine "
+                "('on', 'off')")
+    SSL_CMD_SRV(ProxyProtocol, RAW_ARGS,
+               "SSL Proxy: enable or disable SSL protocol flavors "
+                "('[+-][" SSL_PROTOCOLS "] ...' - see manual)")
+    SSL_CMD_SRV(ProxyCipherSuite, TAKE1,
+               "SSL Proxy: colon-delimited list of permitted SSL ciphers "
+               "('XXX:...:XXX' - see manual)")
+    SSL_CMD_SRV(ProxyVerify, TAKE1,
+               "SSL Proxy: whether to verify the remote certificate "
+               "('on' or 'off')")
+    SSL_CMD_SRV(ProxyVerifyDepth, TAKE1,
+               "SSL Proxy: maximum certificate verification depth "
+               "('N' - number of intermediate certificates)")
+    SSL_CMD_SRV(ProxyCACertificateFile, TAKE1,
+               "SSL Proxy: file containing server certificates "
+               "('/path/to/file' - PEM encoded certificates)")
+    SSL_CMD_SRV(ProxyCACertificatePath, TAKE1,
+               "SSL Proxy: directory containing server certificates "
+               "('/path/to/dir' - contains PEM encoded certificates)")
+    SSL_CMD_SRV(ProxyCARevocationPath, TAKE1,
+                "SSL Proxy: CA Certificate Revocation List (CRL) path "
+                "('/path/to/dir' - contains PEM encoded files)")
+    SSL_CMD_SRV(ProxyCARevocationFile, TAKE1,
+                "SSL Proxy: CA Certificate Revocation List (CRL) file "
+                "('/path/to/file' - PEM encoded)")
+    SSL_CMD_SRV(ProxyCARevocationCheck, TAKE1,
+                "SSL Proxy: CA Certificate Revocation List (CRL) checking mode")
+    SSL_CMD_SRV(ProxyMachineCertificateFile, TAKE1,
+               "SSL Proxy: file containing client certificates "
+               "('/path/to/file' - PEM encoded certificates)")
+    SSL_CMD_SRV(ProxyMachineCertificatePath, TAKE1,
+               "SSL Proxy: directory containing client certificates "
+               "('/path/to/dir' - contains PEM encoded certificates)")
+    SSL_CMD_SRV(ProxyMachineCertificateChainFile, TAKE1,
+               "SSL Proxy: file containing issuing certificates "
+               "of the client certificate "
+               "(`/path/to/file' - PEM encoded certificates)")
+    SSL_CMD_SRV(ProxyCheckPeerExpire, FLAG,
+                "SSL Proxy: check the peers certificate expiration date")
+    SSL_CMD_SRV(ProxyCheckPeerCN, FLAG,
+                "SSL Proxy: check the peers certificate CN")
+
+    /*
+     * Per-directory context configuration directives
+     */
+    SSL_CMD_DIR(Options, OPTIONS, RAW_ARGS,
+               "Set one or more options to configure the SSL engine"
+               "('[+-]option[=value] ...' - see manual)")
+    SSL_CMD_DIR(RequireSSL, AUTHCFG, NO_ARGS,
+               "Require the SSL protocol for the per-directory context "
+               "(no arguments)")
+    SSL_CMD_DIR(Require, AUTHCFG, RAW_ARGS,
+               "Require a boolean expression to evaluate to true for granting access"
+               "(arbitrary complex boolean expression - see manual)")
+    SSL_CMD_DIR(RenegBufferSize, AUTHCFG, TAKE1,
+                "Configure the amount of memory that will be used for buffering the "
+                "request body if a per-location SSL renegotiation is required due to "
+                "changed access control requirements")
+
+    SSL_CMD_SRV(OCSPEnable, FLAG,
+               "Enable use of OCSP to verify certificate revocation ('on', 'off')")
+    SSL_CMD_SRV(OCSPDefaultResponder, TAKE1,
+               "URL of the default OCSP Responder")
+    SSL_CMD_SRV(OCSPOverrideResponder, FLAG,
+               "Force use of the default responder URL ('on', 'off')")
+    SSL_CMD_SRV(OCSPResponseTimeSkew, TAKE1,
+                "Maximum time difference in OCSP responses")
+    SSL_CMD_SRV(OCSPResponseMaxAge, TAKE1,
+                "Maximum age of OCSP responses")
+    SSL_CMD_SRV(OCSPResponderTimeout, TAKE1,
+                "OCSP responder query timeout")
+
+#ifdef HAVE_OCSP_STAPLING
+    /*
+     * OCSP Stapling options
+     */
+    SSL_CMD_SRV(StaplingCache, TAKE1,
+                "SSL Stapling Response Cache storage "
+                "(`dbm:/path/to/file')")
+    SSL_CMD_SRV(UseStapling, FLAG,
+                "SSL switch for the OCSP Stapling protocol " "(`on', `off')")
+    SSL_CMD_SRV(StaplingResponseTimeSkew, TAKE1,
+                "SSL stapling option for maximum time difference in OCSP responses")
+    SSL_CMD_SRV(StaplingResponderTimeout, TAKE1,
+                "SSL stapling option for OCSP responder timeout")
+    SSL_CMD_SRV(StaplingResponseMaxAge, TAKE1,
+                "SSL stapling option for maximum age of OCSP responses")
+    SSL_CMD_SRV(StaplingStandardCacheTimeout, TAKE1,
+                "SSL stapling option for normal OCSP Response Cache Lifetime")
+    SSL_CMD_SRV(StaplingReturnResponderErrors, FLAG,
+                "SSL stapling switch to return Status Errors Back to Client"
+                "(`on', `off')")
+    SSL_CMD_SRV(StaplingFakeTryLater, FLAG,
+                "SSL stapling switch to send tryLater response to client on error "
+                "(`on', `off')")
+    SSL_CMD_SRV(StaplingErrorCacheTimeout, TAKE1,
+                "SSL stapling option for OCSP Response Error Cache Lifetime")
+    SSL_CMD_SRV(StaplingForceURL, TAKE1,
+                "SSL stapling option to Force the OCSP Stapling URL")
+#endif
+
+    /* Deprecated directives. */
+    AP_INIT_RAW_ARGS("SSLLog", ap_set_deprecated, NULL, OR_ALL,
+      "SSLLog directive is no longer supported - use ErrorLog."),
+    AP_INIT_RAW_ARGS("SSLLogLevel", ap_set_deprecated, NULL, OR_ALL,
+      "SSLLogLevel directive is no longer supported - use LogLevel."),
+
+    AP_END_CMD
+};
+
+
+ssl_engine_config.c
+
+if (strcEQ(w, "SSLv2")) {
+            if (action == '-') {
+                continue;
+            }
+            else {
+                return "SSLProtocol: SSLv2 is no longer supported";
+            }
+        }
+        else if (strcEQ(w, "SSLv3")) {
+            thisopt = SSL_PROTOCOL_SSLV3;
+        }
+        else if (strcEQ(w, "TLSv1")) {
+            thisopt = SSL_PROTOCOL_TLSV1;
+        }
+#ifdef HAVE_TLSV1_X
+        else if (strcEQ(w, "TLSv1.1")) {
+            thisopt = SSL_PROTOCOL_TLSV1_1;
+        }
+        else if (strcEQ(w, "TLSv1.2")) {
+            thisopt = SSL_PROTOCOL_TLSV1_2;
+        }
+#endif
+        else if (strcEQ(w, "all")) {
+            thisopt = SSL_PROTOCOL_ALL;
+        }
+        else {
+            return apr_pstrcat(parms->temp_pool,
+                               parms->cmd->name,
+                               ": Illegal protocol '",
+                               w, "'", NULL);
+        }
+        
+        
+ssl_engine.init.c
+
+  
+                     
+                     
+                     
+if (protocol == SSL_PROTOCOL_SSLV3) {
+        method = mctx->pkp ?
+            SSLv3_client_method() : /* proxy */
+            SSLv3_server_method();  /* server */
+    }
+    else if (protocol == SSL_PROTOCOL_TLSV1) {
+        method = mctx->pkp ?
+            TLSv1_client_method() : /* proxy */
+            TLSv1_server_method();  /* server */
+    }
+#ifdef HAVE_TLSV1_X
+    else if (protocol == SSL_PROTOCOL_TLSV1_1) {
+        method = mctx->pkp ?
+            TLSv1_1_client_method() : /* proxy */
+            TLSv1_1_server_method();  /* server */
+    }
+    else if (protocol == SSL_PROTOCOL_TLSV1_2) {
+        method = mctx->pkp ?
+            TLSv1_2_client_method() : /* proxy */
+            TLSv1_2_server_method();  /* server */
+    }
+#endif
+    else { /* For multiple protocols, we need a flexible method */
+        method = mctx->pkp ?
+            SSLv23_client_method() : /* proxy */
+            SSLv23_server_method();  /* server */
+    }
+    
+    
+    
+#ifndef OPENSSL_NO_EC
+    if (idx == SSL_AIDX_ECC)
+      pkey_type = EVP_PKEY_EC;
+    else
+#endif
+    pkey_type = (idx == SSL_AIDX_RSA) ? EVP_PKEY_RSA : EVP_PKEY_DSA;
+    
+  
+    
+    
+    
+ssl_engine_pphrase.c
+
+                
+                
+                
+  // mANUAL              
+ssl_engine_vars.c
+
+    if (strlen(var) > 8 && strcEQn(var, "VERSION_", 8)) {
+        result = ssl_var_lookup_ssl_version(p, var+8);
+    }
+    else if (ssl != NULL && strcEQ(var, "PROTOCOL")) {
+        result = (char *)SSL_get_version(ssl);
+    }
+    else if (ssl != NULL && strcEQ(var, "SESSION_ID")) {
+        char buf[SSL_SESSION_ID_STRING_LEN];
+        SSL_SESSION *pSession = SSL_get_session(ssl);
+        if (pSession) {
+            unsigned char *id;
+            unsigned int idlen;
+
+#ifdef OPENSSL_NO_SSL_INTERN
+            id = (unsigned char *)SSL_SESSION_get_id(pSession, &idlen);
+#else
+            id = pSession->session_id;
+            idlen = pSession->session_id_length;
+#endif
+
+            result = apr_pstrdup(p, SSL_SESSION_id2sz(id, idlen,
+                                                      buf, sizeof(buf)));
+        }
+    }
+    else if(ssl != NULL && strcEQ(var, "SESSION_RESUMED")) {
+        if (SSL_session_reused(ssl) == 1)
+            result = "Resumed";
+        else
+            result = "Initial";
+    }
+    else if (ssl != NULL && strlen(var) >= 6 && strcEQn(var, "CIPHER", 6)) {
+        result = ssl_var_lookup_ssl_cipher(p, c, var+6);
+    }
+    else if (ssl != NULL && strlen(var) > 18 && strcEQn(var, "CLIENT_CERT_CHAIN_", 18)) {
+        sk = SSL_get_peer_cert_chain(ssl);
+        result = ssl_var_lookup_ssl_cert_chain(p, sk, var+18);
+    }
+    else if (ssl != NULL && strcEQ(var, "CLIENT_VERIFY")) {
+        result = ssl_var_lookup_ssl_cert_verify(p, c);
+    }
+    else if (ssl != NULL && strlen(var) > 7 && strcEQn(var, "CLIENT_", 7)) {
+        if ((xs = SSL_get_peer_certificate(ssl)) != NULL) {
+            result = ssl_var_lookup_ssl_cert(p, r, xs, var+7);
+            X509_free(xs);
+        }
+    }
+    else if (ssl != NULL && strlen(var) > 7 && strcEQn(var, "SERVER_", 7)) {
+        if ((xs = SSL_get_certificate(ssl)) != NULL) {
+            result = ssl_var_lookup_ssl_cert(p, r, xs, var+7);
+            /* SSL_get_certificate is different from SSL_get_peer_certificate.
+             * No need to X509_free(xs).
+             */
+        }
+    }
+    else if (ssl != NULL && strcEQ(var, "COMPRESS_METHOD")) {
+        result = ssl_var_lookup_ssl_compress_meth(ssl);
+    }
+#ifndef OPENSSL_NO_TLSEXT
+    else if (ssl != NULL && strcEQ(var, "TLS_SNI")) {
+        result = apr_pstrdup(p, SSL_get_servername(ssl,
+                                                   TLSEXT_NAMETYPE_host_name));
+    }
+#endif
+    else if (ssl != NULL && strcEQ(var, "SECURE_RENEG")) {
+        int flag = 0;
+#ifdef SSL_get_secure_renegotiation_support
+        flag = SSL_get_secure_renegotiation_support(ssl);
+#endif
+        result = apr_pstrdup(p, flag ? "true" : "false");
+    }
+    
+    
+   
+
+
+
+
+
+                       
+                       
+
+
+ab.c
+
+// IF SEM ( )
+#ifdef USE_SSL
+        if (c->ssl) {
+            apr_size_t e_ssl;
+            e_ssl = SSL_write(c->ssl,request + c->rwrote, l);
+            if (e_ssl != l) {
+                BIO_printf(bio_err, "SSL write failed - closing connection\n");
+                ERR_print_errors(bio_err);
+                close_connection (c);
+                return;
+            }
+            l = e_ssl;
+            e = APR_SUCCESS;
+        }
+        else
+#endif
+            e = apr_socket_send(c->aprsock, request + c->rwrote, &l);
+            
+            
+        // FALTA ( )    
+            
+            #ifdef USE_SSL
+    if (c->ssl) {
+        ssl_proceed_handshake(c);
+    } else
+#endif
+    {
+        write_request(c);
+    }
+    
+    
+    
+    // MANUAL
+    #ifdef USE_SSL
+    if (c->ssl) {
+        status = SSL_read(c->ssl, buffer, r);
+        if (status <= 0) {
+            int scode = SSL_get_error(c->ssl, status);
+
+            if (scode == SSL_ERROR_ZERO_RETURN) {
+                /* connection closed cleanly: */
+                good++;
+                close_connection(c);
+            }
+            else if (scode == SSL_ERROR_SYSCALL
+                     && status == 0
+                     && c->read != 0) {
+                /* connection closed, but in violation of the protocol, after
+                 * some data has already been read; this commonly happens, so
+                 * let the length check catch any response errors
+                 */
+                good++;
+                close_connection(c);
+            }
+            else if (scode != SSL_ERROR_WANT_WRITE
+                     && scode != SSL_ERROR_WANT_READ) {
+                /* some fatal error: */
+                c->read = 0;
+                BIO_printf(bio_err, "SSL read failed (%d) - closing connection\n", scode);
+                ERR_print_errors(bio_err);
+                close_connection(c);
+            }
+            return;
+        }
+        r = status;
+    }
+    else
+#endif
+    {
+        status = apr_socket_recv(c->aprsock, buffer, &r);
+        if (APR_STATUS_IS_EAGAIN(status))
+            return;
+        else if (r == 0 && APR_STATUS_IS_EOF(status)) {
+            good++;
+            close_connection(c);
+            return;
+        }
+        /* catch legitimate fatal apr_socket_recv errors */
+        else if (status != APR_SUCCESS) {
+            err_recv++;
+            if (recverrok) {
+                bad++;
+                close_connection(c);
+                if (verbosity >= 1) {
+                    char buf[120];
+                    fprintf(stderr,"%s: %s (%d)\n", "apr_socket_recv", apr_strerror(status, buf, sizeof buf), status);
+                }
+                return;
+            } else {
+                apr_err("apr_socket_recv", status);
+            }
+        }
+    }
+    
+    
+    
+    
+    #ifdef USE_SSL
+                        if (c->ssl)
+                            ssl_proceed_handshake(c);
+                        else
+#endif
+                        write_request(c);
+                        
+                        
+        
+        
+        
+        
+        if (port == 0) {        /* no port specified */
+#ifdef USE_SSL
+        if (is_ssl)
+            port = 443;
+        else
+#endif
+        port = 80;
+    }
+    
+    
+        
+        
+            
+            
+            
+            // MANUAL
+            
+            if (strncasecmp(opt_arg, "ALL", 3) == 0) {
+                    meth = SSLv23_client_method();
+#ifndef OPENSSL_NO_SSL2
+                } else if (strncasecmp(opt_arg, "SSL2", 4) == 0) {
+                    meth = SSLv2_client_method();
+#endif
+                } else if (strncasecmp(opt_arg, "SSL3", 4) == 0) {
+                    meth = SSLv3_client_method();
+                } else if (strncasecmp(opt_arg, "TLS1", 4) == 0) {
+                    meth = TLSv1_client_method();
+                }
+                
+                
+                
+    
+
+
+suexec.c
+
+
+        
+        
+        // MANUAL
+        if ((argc > 1)
+        && (! strcmp(argv[1], "-V"))
+        && ((uid == 0)
+#ifdef _OSD_POSIX
+        /* User name comparisons are case insensitive on BS2000/OSD */
+            || (! strcasecmp(AP_HTTPD_USER, pw->pw_name)))
+#else  /* _OSD_POSIX */
+            || (! strcmp(AP_HTTPD_USER, pw->pw_name)))
+#endif /* _OSD_POSIX */
+        ) {
+#ifdef AP_DOC_ROOT
+        fprintf(stderr, " -D AP_DOC_ROOT=\"%s\"\n", AP_DOC_ROOT);
+#endif
+#ifdef AP_GID_MIN
+        fprintf(stderr, " -D AP_GID_MIN=%d\n", AP_GID_MIN);
+#endif
+#ifdef AP_HTTPD_USER
+        fprintf(stderr, " -D AP_HTTPD_USER=\"%s\"\n", AP_HTTPD_USER);
+#endif
+#ifdef AP_LOG_EXEC
+        fprintf(stderr, " -D AP_LOG_EXEC=\"%s\"\n", AP_LOG_EXEC);
+#endif
+#ifdef AP_SAFE_PATH
+        fprintf(stderr, " -D AP_SAFE_PATH=\"%s\"\n", AP_SAFE_PATH);
+#endif
+#ifdef AP_SUEXEC_UMASK
+        fprintf(stderr, " -D AP_SUEXEC_UMASK=%03o\n", AP_SUEXEC_UMASK);
+#endif
+#ifdef AP_UID_MIN
+        fprintf(stderr, " -D AP_UID_MIN=%d\n", AP_UID_MIN);
+#endif
+#ifdef AP_USERDIR_SUFFIX
+        fprintf(stderr, " -D AP_USERDIR_SUFFIX=\"%s\"\n", AP_USERDIR_SUFFIX);
+#endif
+        exit(0);
+    }
+    
+    
+    
+    
+    
+    
+    
+    event.c
+    
+    if (child_slot >= 0) {
+                for (i = 0; i < threads_per_child; i++)
+                    ap_update_child_status_from_indexes(child_slot, i,
+                                                        SERVER_DEAD,
+                                                        (request_rec *) NULL);
+
+                event_note_child_killed(child_slot, 0, 0);
+                ap_scoreboard_image->parent[child_slot].quiescing = 0;
+                if (processed_status == APEXIT_CHILDSICK) {
+                    /* resource shortage, minimize the fork rate */
+                    retained->idle_spawn_rate = 1;
+                }
+                else if (remaining_children_to_start
+                         && child_slot < ap_daemons_limit) {
+                    /* we're still doing a 1-for-1 replacement of dead
+                     * children with new children
+                     */
+                    make_child(ap_server_conf, child_slot);
+                    --remaining_children_to_start;
+                }
+            }
+            else if (ap_unregister_extra_mpm_process(pid.pid, &old_gen) == 1) {
+
+                event_note_child_killed(-1, /* already out of the scoreboard */
+                                        pid.pid, old_gen);
+                if (processed_status == APEXIT_CHILDSICK
+                    && old_gen == retained->my_generation) {
+                    /* resource shortage, minimize the fork rate */
+                    retained->idle_spawn_rate = 1;
+                }
+#if APR_HAS_OTHER_CHILD
+            }
+            else if (apr_proc_other_child_alert(&pid, APR_OC_REASON_DEATH,
+                                                status) == 0) {
+                /* handled */
+#endif
+            }
+            else if (retained->is_graceful) {
+                /* Great, we've probably just lost a slot in the
+                 * scoreboard.  Somehow we don't know about this child.
+                 */
+                ap_log_error(APLOG_MARK, APLOG_WARNING, 0,
+                             ap_server_conf, APLOGNO(00488)
+                             "long lost child came home! (pid %ld)",
+                             (long) pid.pid);
+            }
+            
+            
+            
+            mpm_netware.c
+            
+            
+            if (stat == APR_SUCCESS) {
+                apr_socket_opt_set(csd, APR_SO_NONBLOCK, 0);
+#ifdef DBINFO_ON
+                if (wouldblock_retry < MAX_WB_RETRIES) {
+                    retry_success++;
+                    avg_retries += (MAX_WB_RETRIES-wouldblock_retry);
+                }
+#endif
+                break;       /* We have a socket ready for reading */
+            }
+            else {
+#ifdef DBINFO_ON
+                if (APR_STATUS_IS_EAGAIN(stat)) {
+                        would_block++;
+                        retry_fail++;
+                }
+                else if (
+#else
+                if (APR_STATUS_IS_EAGAIN(stat) ||
+#endif
+                    APR_STATUS_IS_ECONNRESET(stat) ||
+                    APR_STATUS_IS_ETIMEDOUT(stat) ||
+                    APR_STATUS_IS_EHOSTUNREACH(stat) ||
+                    APR_STATUS_IS_ENETUNREACH(stat)) {
+                        ;
+                }
+#ifdef USE_WINSOCK
+                else if (APR_STATUS_IS_ENETDOWN(stat)) {
+                       /*
+                        * When the network layer has been shut down, there
+                        * is not much use in simply exiting: the parent
+                        * would simply re-create us (and we'd fail again).
+                        * Use the CHILDFATAL code to tear the server down.
+                        * @@@ Martin's idea for possible improvement:
+                        * A different approach would be to define
+                        * a new APEXIT_NETDOWN exit code, the reception
+                        * of which would make the parent shutdown all
+                        * children, then idle-loop until it detected that
+                        * the network is up again, and restart the children.
+                        * Ben Hyde noted that temporary ENETDOWN situations
+                        * occur in mobile IP.
+                        */
+                        ap_log_error(APLOG_MARK, APLOG_EMERG, stat, ap_server_conf, APLOGNO(00218)
+                            "apr_socket_accept: giving up.");
+                        clean_child_exit(APEXIT_CHILDFATAL, my_worker_num, ptrans,
+                                         bucket_alloc);
+                }
+#endif
+                else {
+                        ap_log_error(APLOG_MARK, APLOG_ERR, stat, ap_server_conf, APLOGNO(00219)
+                            "apr_socket_accept: (client socket)");
+                        clean_child_exit(1, my_worker_num, ptrans, bucket_alloc);
+                }
+                
+                
+                
+                
+                prefork.c
+                
+         
+    
+    
+    
+    
+    
+    if (child_slot >= 0) {
+                (void) ap_update_child_status_from_indexes(child_slot, 0, SERVER_DEAD,
+                                                           (request_rec *) NULL);
+                prefork_note_child_killed(child_slot, 0, 0);
+                if (processed_status == APEXIT_CHILDSICK) {
+                    /* child detected a resource shortage (E[NM]FILE, ENOBUFS, etc)
+                     * cut the fork rate to the minimum
+                     */
+                    retained->idle_spawn_rate = 1;
+                }
+                else if (remaining_children_to_start
+                    && child_slot < ap_daemons_limit) {
+                    /* we're still doing a 1-for-1 replacement of dead
+                     * children with new children
+                     */
+                    make_child(ap_server_conf, child_slot);
+                    --remaining_children_to_start;
+                }
+#if APR_HAS_OTHER_CHILD
+            }
+            else if (apr_proc_other_child_alert(&pid, APR_OC_REASON_DEATH, status) == APR_SUCCESS) {
+                /* handled */
+#endif
+            }
+            else if (retained->is_graceful) {
+                /* Great, we've probably just lost a slot in the
+                 * scoreboard.  Somehow we don't know about this
+                 * child.
+                 */
+                ap_log_error(APLOG_MARK, APLOG_WARNING,
+                            0, ap_server_conf, APLOGNO(00167)
+                            "long lost child came home! (pid %ld)", (long)pid.pid);
+            }
+            /* Don't perform idle maintenance when a child dies,
+             * only do it when there's a timeout.  Remember only a
+             * finite number of children can die, and it's pretty
+             * pathological for a lot to die suddenly.
+             */
+            continue;
+        }
+        else if (remaining_children_to_start) {
+            /* we hit a 1 second timeout in which none of the previous
+             * generation of children needed to be reaped... so assume
+             * they're all done, and pick up the slack if any is left.
+             */
+            startup_children(remaining_children_to_start);
+            remaining_children_to_start = 0;
+            /* In any event we really shouldn't do the code below because
+             * few of the servers we just started are in the IDLE state
+             * yet, so we'd mistakenly create an extra server.
+             */
+            continue;
+        }
+        
+        
+        
+        
+        worker.c
+        
+        
+        
+        
+        
+        
+        if (child_slot >= 0) {
+                for (i = 0; i < threads_per_child; i++)
+                    ap_update_child_status_from_indexes(child_slot, i, SERVER_DEAD,
+                                                        (request_rec *) NULL);
+
+                worker_note_child_killed(child_slot, 0, 0);
+                ap_scoreboard_image->parent[child_slot].quiescing = 0;
+                if (processed_status == APEXIT_CHILDSICK) {
+                    /* resource shortage, minimize the fork rate */
+                    retained->idle_spawn_rate = 1;
+                }
+                else if (remaining_children_to_start
+                    && child_slot < ap_daemons_limit) {
+                    /* we're still doing a 1-for-1 replacement of dead
+                     * children with new children
+                     */
+                    make_child(ap_server_conf, child_slot);
+                    --remaining_children_to_start;
+                }
+            }
+            else if (ap_unregister_extra_mpm_process(pid.pid, &old_gen) == 1) {
+                worker_note_child_killed(-1, /* already out of the scoreboard */
+                                         pid.pid, old_gen);
+                if (processed_status == APEXIT_CHILDSICK
+                    && old_gen == retained->my_generation) {
+                    /* resource shortage, minimize the fork rate */
+                    retained->idle_spawn_rate = 1;
+                }
+#if APR_HAS_OTHER_CHILD
+            }
+            else if (apr_proc_other_child_alert(&pid, APR_OC_REASON_DEATH,
+                                                status) == 0) {
+                /* handled */
+#endif
+            }
+            else if (retained->is_graceful) {
+                /* Great, we've probably just lost a slot in the
+                 * scoreboard.  Somehow we don't know about this child.
+                 */
+                ap_log_error(APLOG_MARK, APLOG_WARNING, 0,
+                             ap_server_conf, APLOGNO(00291)
+                             "long lost child came home! (pid %ld)",
+                             (long)pid.pid);
+            }
+            
+            
+            
+           
+        
+        
+        
+        
+        
+        log.c
+        
+        
+        if (*s->error_fname == '|') {
+        apr_file_t *dummy = NULL;
+        apr_cmdtype_e cmdtype = APR_PROGRAM_ENV;
+        fname = s->error_fname + 1;
+
+        /* In 2.4 favor PROGRAM_ENV, accept "||prog" syntax for compatibility
+         * and "|$cmd" to override the default.
+         * Any 2.2 backport would continue to favor SHELLCMD_ENV so there
+         * accept "||prog" to override, and "|$cmd" to ease conversion.
+         */
+        if (*fname == '|')
+            ++fname;
+        if (*fname == '$') {
+            cmdtype = APR_SHELLCMD_ENV;
+            ++fname;
+        }
+
+        /* Spawn a new child logger.  If this is the main server_rec,
+         * the new child must use a dummy stderr since the current
+         * stderr might be a pipe to the old logger.  Otherwise, the
+         * child inherits the parents stderr. */
+        rc = log_child(p, fname, &dummy, cmdtype, is_main);
+        if (rc != APR_SUCCESS) {
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, NULL, APLOGNO(00089)
+                         "Couldn't start ErrorLog process '%s'.",
+                         s->error_fname + 1);
+            return DONE;
+        }
+
+        s->error_log = dummy;
+    }
+
+#ifdef HAVE_SYSLOG
+    else if (!strncasecmp(s->error_fname, "syslog", 6)) {
+        if ((fname = strchr(s->error_fname, ':'))) {
+            const TRANS *fac;
+
+            fname++;
+            for (fac = facilities; fac->t_name; fac++) {
+                if (!strcasecmp(fname, fac->t_name)) {
+                    openlog(ap_server_argv0, LOG_NDELAY|LOG_CONS|LOG_PID,
+                            fac->t_val);
+                    s->error_log = NULL;
+                    return OK;
+                }
+            }
+        }
+        else {
+            openlog(ap_server_argv0, LOG_NDELAY|LOG_CONS|LOG_PID, LOG_LOCAL7);
+        }
+
+        s->error_log = NULL;
+    }
+#endif
+    else {
+        fname = ap_server_root_relative(p, s->error_fname);
+        if (!fname) {
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, APR_EBADPATH, NULL, APLOGNO(00090)
+                         "%s: Invalid error log path %s.",
+                         ap_server_argv0, s->error_fname);
+            return DONE;
+        }
+        if ((rc = apr_file_open(&s->error_log, fname,
+                               APR_APPEND | APR_WRITE | APR_CREATE | APR_LARGEFILE,
+                               APR_OS_DEFAULT, p)) != APR_SUCCESS) {
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, NULL, APLOGNO(00091)
+                         "%s: could not open error log file %s.",
+                         ap_server_argv0, fname);
+            return DONE;
+        }
+    }
+    
+    
+    
+    if (logf) {
+        /* Truncate for the terminator (as apr_snprintf does) */
+        if (len > MAX_STRING_LEN - sizeof(APR_EOL_STR)) {
+            len = MAX_STRING_LEN - sizeof(APR_EOL_STR);
+        }
+        strcpy(errstr + len, APR_EOL_STR);
+        apr_file_puts(errstr, logf);
+        apr_file_flush(logf);
+    }
+#ifdef HAVE_SYSLOG
+    else {
+        syslog(level < LOG_PRIMASK ? level : APLOG_DEBUG, "%s", errstr);
+    }
+#endif
+
+
+
+
+            
+            
+            
+            
+            scoreboard.c
+            
+            #if APR_HAS_SHARED_MEMORY
+    if (sb_type == SB_SHARED) {
+        void *sb_shared;
+        rv = open_scoreboard(p);
+        if (rv || !(sb_shared = apr_shm_baseaddr_get(ap_scoreboard_shm))) {
+            return HTTP_INTERNAL_SERVER_ERROR;
+        }
+        memset(sb_shared, 0, scoreboard_size);
+        ap_init_scoreboard(sb_shared);
+    }
+    else
+#endif
+    {
+        /* A simple malloc will suffice */
+        void *sb_mem = ap_calloc(1, scoreboard_size);
+        ap_init_scoreboard(sb_mem);
+    }
+    
+    
+    
+    
+    
+    util_mutex.c
+    
+    if (!strcasecmp(meth, "default") || !strcasecmp(meth, "yes")) {
+        *mutexmech = APR_LOCK_DEFAULT;
+    }
+#if APR_HAS_FCNTL_SERIALIZE
+    else if (!strcasecmp(meth, "fcntl") || !strcasecmp(meth, "file")) {
+        *mutexmech = APR_LOCK_FCNTL;
+    }
+#endif
+#if APR_HAS_FLOCK_SERIALIZE
+    else if (!strcasecmp(meth, "flock") || !strcasecmp(meth, "file")) {
+        *mutexmech = APR_LOCK_FLOCK;
+    }
+#endif
+#if APR_HAS_POSIXSEM_SERIALIZE
+    else if (!strcasecmp(meth, "posixsem") || !strcasecmp(meth, "sem")) {
+        *mutexmech = APR_LOCK_POSIXSEM;
+        /* Posix/SysV semaphores aren't file based, use the literal name
+         * if provided and fall back on APR's default if not.  Today, APR
+         * will ignore it, but once supported it has an absurdly short limit.
+         */
+        if (file) {
+            *mutexfile = apr_pstrdup(pool, file);
+
+            file = NULL;
+        }
+    }
+#endif
+#if APR_HAS_SYSVSEM_SERIALIZE
+    else if (!strcasecmp(meth, "sysvsem") || !strcasecmp(meth, "sem")) {
+        *mutexmech = APR_LOCK_SYSVSEM;
+    }
+#endif
+#if APR_HAS_PROC_PTHREAD_SERIALIZE
+    else if (!strcasecmp(meth, "pthread")) {
+        *mutexmech = APR_LOCK_PROC_PTHREAD;
+    }
+#endif
+    else {
+        return APR_ENOTIMPL;
+    }
+    
+    
+    
+   
+    
+    
+    
+    util_script.c
+    
+    if (!strcasecmp(hdrs[i].key, "Content-type")) {
+            apr_table_addn(e, "CONTENT_TYPE", hdrs[i].val);
+        }
+        else if (!strcasecmp(hdrs[i].key, "Content-length")) {
+            apr_table_addn(e, "CONTENT_LENGTH", hdrs[i].val);
+        }
+        /*
+         * You really don't want to disable this check, since it leaves you
+         * wide open to CGIs stealing passwords and people viewing them
+         * in the environment with "ps -e".  But, if you must...
+         */
+#ifndef SECURITY_HOLE_PASS_AUTHORIZATION
+        else if (!strcasecmp(hdrs[i].key, "Authorization")
+                 || !strcasecmp(hdrs[i].key, "Proxy-Authorization")) {
+            continue;
+        }
+#endif
+        else
+            add_unless_null(e, http2env(r, hdrs[i].key), hdrs[i].val);
+            
+            
+          

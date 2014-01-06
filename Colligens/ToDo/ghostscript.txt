@@ -1,0 +1,1459 @@
+Ghostscript
+
+evenbetter-rll.c
+
+#ifdef USE_VECTOR
+  if (ebc->using_vectors)
+    even_better_line_vector(ebc, dest, src);
+  else
+#endif
+  if (ebc->do_shadows)
+    even_better_line_both (ebc, dest, src);
+    
+    
+    
+    
+#ifdef USE_AVEC
+  if (ebc->using_vectors == 2)
+    {
+      even_better_line_fastprep (ebc, dest, src);
+    }
+  else
+#endif
+    {
+      for (i = 0; i < ebc->n_planes; i++)
+        {
+          rll_buf[i] = (ET_Rll *)malloc (source_width * sizeof(ET_Rll));
+          even_better_compress_rll (rll_buf[i], src[i], source_width, dest_width);
+        }
+      even_better_line_rll (ebc, dest, (const ET_Rll * const *)rll_buf);
+      for (i = 0; i < ebc->n_planes; i++)
+        free (rll_buf[i]);
+    }
+    
+    
+    
+    evenbetter-rll.h
+    
+    
+    #ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+aes.h
+    
+    
+    #ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+ConvertUTF.h
+    
+    
+    #ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+gdev3b1.c
+
+
+gx_device_att3b1 gs_att3b1_device = {
+    std_device_std_body(gx_device_att3b1, &att3b1_procs, "att3b1",
+      XSIZE, YSIZE, XDPI, YDPI),
+     { 0 },			/* std_procs */
+    -1, 0, 0,			/* fd, screen, line_size, */
+    0, 0,			/* screen size, page */
+#ifdef ATT3B1_PERF
+    0, 0, 0,			/* no_output, no_fill, no_copy */
+#endif
+};
+
+
+             
+             
+             
+gdevdevn.c
+
+
+#if DEVN_ENCODE_COLOR_USING_BIT_MAP_ARRAY
+        for (j = 0; j < num_bit_map_elem; j++) {
+            if ((pnew_comp_bit_map->colorants[j] &
+                    (*pcomp_bit_map)->colorants[j]) !=
+                        pnew_comp_bit_map->colorants[j])
+                break;          /* No match if a colorant is missing. */
+            if ((pnew_comp_bit_map->solid_colorants[j] &
+                    (*pcomp_bit_map)->solid_colorants[j]) !=
+                        (*pcomp_bit_map)->solid_colorants[j])
+                break;          /* No match if extra solid colorants */
+        }
+        if (j == num_bit_map_elem) {
+#else
+        if (((pnew_comp_bit_map->colorants &
+                (*pcomp_bit_map)->colorants) ==
+                    pnew_comp_bit_map->colorants) &&
+                ((pnew_comp_bit_map->solid_colorants &
+                    (*pcomp_bit_map)->solid_colorants) ==
+                    (*pcomp_bit_map)->solid_colorants)) {
+#endif
+            /*
+             * To prevent possible loss of accuracy, ignore matches in which the
+             * packing will use fewer bits in the encoded colorant values than
+             * is possible for the given number of colorants.
+             */
+            if (num_comp_bits[pnew_comp_bit_map->num_comp] >
+                        num_comp_bits[(*pcomp_bit_map)->num_comp])
+                break;
+            /*
+             * We have a match.  Put our object number into the top eight
+             * bits of the encoded gx_color_index and exit.
+             */
+            *plist_index = ((gx_color_index) i) << (NUM_GX_COLOR_INDEX_BITS - 8);
+            return true;
+        }
+    }
+    
+    
+    
+    gdevepsn.c
+    
+    
+    static const char eps_init_string[] = {
+#if ARCHAIC
+        ESC, '@', 022 /*^R*/, ESC, 'Q'
+#else
+        ESC, '@', ESC, 'P', ESC, 'l', 0, '\r', ESC, 'Q'
+#endif
+};
+
+
+gdevmsxf.c
+
+
+#ifdef NOTUSED			/* we don't own any windows so we can no longer do this */
+    if (dev->dname == gs_mswin_device.dname &&
+        wdev->hdctext != NULL && !wxf->invert_y
+        ) {			/* Display the character directly */
+        HDC hdc = wdev->hdctext;
+        PALETTEENTRY *pal = &wdev->limgpalette->palPalEntry[color];
+
+        if ((code = win_select_font(hdc, wxf)) < 0)
+            return code;
+        SetTextColor(hdc, RGB(pal->peRed, pal->peGreen, pal->peBlue));
+        SetBkMode(hdc, TRANSPARENT);
+        TextOut(hdc, xo, yo - wxf->y_offset, &chr, 1);
+    } else
+#endif
+    if (!required)
+        code = -1;		/* too hard */
+    else {			/* Display on an intermediate bitmap, then copy the bits. */
+        gs_point wxy;
+        gs_int_rect bbox;
+        int w, h, wbm, raster;
+        gx_device_win *fdev = wxf->dev;
+        HBITMAP hbm;
+        byte *bits;
+
+        code = (*xf->common.procs->char_metrics) (xf, xg, 0,
+                                                  &wxy, &bbox);
+        if (code < 0)
+            return code;
+        w = bbox.q.x - bbox.p.x;
+        h = bbox.q.y - bbox.p.y;
+        wbm = ROUND_UP(w, align_bitmap_mod * 8);
+        raster = wbm >> 3;
+        bits = gs_malloc(dev->memory, h, raster, "win_render_char");
+        if (bits == 0)
+            return gs_error_limitcheck;
+        hbm = CreateBitmap(wbm, h, 1, 1, NULL);
+        if (hbm == NULL) {
+            code = gs_error_limitcheck;
+        } else {
+            HDC hdcwin = win_get_dc(fdev);
+            HDC hdcbit = CreateCompatibleDC(hdcwin);
+
+            dev_proc_copy_mono((*copy_mono)) =
+                dev_proc(dev, copy_mono);
+            int y = yo - wxf->y_offset;
+
+            SetMapMode(hdcbit, GetMapMode(hdcwin));
+            win_select_font(hdcbit, wxf);
+            SelectObject(hdcbit, hbm);
+            PatBlt(hdcbit, 0, 0, wbm, h, rop_write_0s);
+            SetTextColor(hdcbit, 0xffffffL);	/* 1 */
+            SetBkMode(hdcbit, TRANSPARENT);
+            TextOut(hdcbit, 0, 0, &chr, 1);
+            GetBitmapBits(hbm, (DWORD) raster * h, bits);
+            DeleteDC(hdcbit);
+            win_release_dc(fdev, hdcwin);
+            DeleteObject(hbm);
+            if (!wxf->invert_y)
+                code = (*copy_mono) (dev, bits, 0,
+                                     raster, gx_no_bitmap_id,
+                                     xo, y, w, h,
+                                     gx_no_color_index, color);
+            else {		/* Copy scan lines in reverse order. */
+                int i;
+
+                y += h - 1;
+                for (i = 0; i < h; i++)
+                    (*copy_mono) (dev, bits + i * raster,
+                                  0, raster, gx_no_bitmap_id,
+                                  xo, y - i, w, 1,
+                                  gx_no_color_index, color);
+            }
+        }
+        gs_free(dev->memory, bits, h, raster, "win_render_char");
+    }
+    
+    
+    
+    gdevpdf.c
+    
+    
+    if (angle < 0) {
+#define Bug688793
+#ifdef  Bug688793
+        /* If not combinable, prefer dsc rotation : */
+            if (dsc_orientation >= 0)
+                angle = dsc_orientation * 90;
+            else
+                angle = ptr->Rotate;
+#else
+        /* If not combinable, prefer text rotation : */
+            if (ptr->Rotate >= 0)
+                angle = ptr->Rotate;
+#ifdef Bug687800
+            else
+                angle = dsc_orientation * 90;
+#endif
+#endif
+        }
+        
+        
+        
+        gdevpdfu.c
+        
+        if (TEMPLATE_IS(s_A85E_template))
+            binary_ok = false;
+        else if (TEMPLATE_IS(s_CFE_template)) {
+            cos_param_list_writer_t writer;
+            stream_CF_state cfs;
+
+            decode_parms =
+                cos_dict_alloc(pdev, "pdf_put_image_filters(decode_parms)");
+            if (decode_parms == 0)
+                return_error(gs_error_VMerror);
+            CHECK(cos_param_list_writer_init(&writer, decode_parms, 0));
+            /*
+             * If EndOfBlock is true, we mustn't write a Rows value.
+             * This is a hack....
+             */
+            cfs = *(const stream_CF_state *)st;
+            if (cfs.EndOfBlock)
+                cfs.Rows = 0;
+            CHECK(s_CF_get_params((gs_param_list *)&writer, &cfs, false));
+            filter_name = pfn->CCITTFaxDecode;
+        } else if (TEMPLATE_IS(s_DCTE_template))
+            filter_name = pfn->DCTDecode;
+        else if (TEMPLATE_IS(s_zlibE_template))
+            filter_name = pfn->FlateDecode;
+        else if (TEMPLATE_IS(s_LZWE_template))
+            filter_name = pfn->LZWDecode;
+#ifdef USE_LDF_JB2
+        else if (TEMPLATE_IS(s_jbig2encode_template))
+            filter_name = pfn->JBIG2Decode;
+#endif
+#ifdef USE_LWF_JP2
+        else if (TEMPLATE_IS(s_jpxe_template))
+            filter_name = pfn->JPXDecode;
+#endif
+        else if (TEMPLATE_IS(s_PNGPE_template)) {
+            /* This is a predictor for FlateDecode or LZWEncode. */
+            const stream_PNGP_state *const ss =
+                (const stream_PNGP_state *)st;
+
+            decode_parms =
+                cos_dict_alloc(pdev, "pdf_put_image_filters(decode_parms)");
+            if (decode_parms == 0)
+                return_error(gs_error_VMerror);
+            CHECK(cos_dict_put_c_key_int(decode_parms, "/Predictor",
+                                         ss->Predictor));
+            CHECK(cos_dict_put_c_key_int(decode_parms, "/Columns",
+                                         ss->Columns));
+            if (ss->Colors != 1)
+                CHECK(cos_dict_put_c_key_int(decode_parms, "/Colors",
+                                             ss->Colors));
+            if (ss->BitsPerComponent != 8)
+                CHECK(cos_dict_put_c_key_int(decode_parms,
+                                             "/BitsPerComponent",
+                                             ss->BitsPerComponent));
+        } else if (TEMPLATE_IS(s_RLE_template))
+            filter_name = pfn->RunLengthDecode;
+#undef TEMPLATE_IS
+    }
+    if (filter_name) {
+        if (binary_ok) {
+            CHECK(cos_dict_put_c_strings(pcd, pfn->Filter, filter_name));
+            if (decode_parms)
+                CHECK(cos_dict_put_c_key_object(pcd, pfn->DecodeParms,
+                                                COS_OBJECT(decode_parms)));
+        } else {
+            cos_array_t *pca =
+                cos_array_alloc(pdev, "pdf_put_image_filters(Filters)");
+
+            if (pca == 0)
+                return_error(gs_error_VMerror);
+            CHECK(cos_array_add_c_string(pca, pfn->ASCII85Decode));
+            CHECK(cos_array_add_c_string(pca, filter_name));
+            CHECK(cos_dict_put_c_key_object(pcd, pfn->Filter,
+                                            COS_OBJECT(pca)));
+            if (decode_parms) {
+                pca = cos_array_alloc(pdev,
+                                      "pdf_put_image_filters(DecodeParms)");
+                if (pca == 0)
+                    return_error(gs_error_VMerror);
+                CHECK(cos_array_add_c_string(pca, "null"));
+                CHECK(cos_array_add_object(pca, COS_OBJECT(decode_parms)));
+                CHECK(cos_dict_put_c_key_object(pcd, pfn->DecodeParms,
+                                                COS_OBJECT(pca)));
+            }
+        }
+    } else if (!binary_ok)
+        CHECK(cos_dict_put_c_strings(pcd, pfn->Filter, pfn->ASCII85Decode));
+    return 0;
+    
+    
+    
+        
+        
+        
+        
+          
+         
+           
+           
+           
+           gdevwdib.c
+           
+           
+           #ifdef __WIN32__
+    if (is_win32s) {
+#endif
+        /* Round up the width so that the scan line size is a power of 2. */
+        if (dev->color_info.depth == 24) {
+            width = param_dev->width * 3 - 1;
+            while (width & (width + 1))
+                width |= width >> 1;
+            width = (width + 1) / 3;
+        } else {
+            width = param_dev->width - 1;
+            while (width & (width + 1))
+                width |= width >> 1;
+            width++;
+        }
+#ifdef __WIN32__
+    } else {			/* don't have to worry about segments so use less memory */
+        width = param_dev->width;
+    }
+#endif
+
+
+
+gdevxcmp.c
+
+#if HaveStdCMap
+        /* Get a standard color map if available */
+        if (xdev->vinfo->visual == DefaultVisualOfScreen(xdev->scr)) {
+            xdev->cman.std_cmap.map = x_get_std_cmap(xdev, XA_RGB_DEFAULT_MAP);
+        } else {
+            xdev->cman.std_cmap.map = x_get_std_cmap(xdev, XA_RGB_BEST_MAP);
+        }
+        if (xdev->cman.std_cmap.map ||
+            (xdev->vinfo->class == TrueColor && alloc_std_cmap(xdev, true))
+            ) {
+            xdev->color_info.dither_grays = xdev->color_info.dither_colors =
+                min(xdev->cman.std_cmap.map->red_max,
+                    min(xdev->cman.std_cmap.map->green_max,
+                        xdev->cman.std_cmap.map->blue_max)) + 1;
+            if (xdev->cman.std_cmap.map)
+                set_std_cmap(xdev, xdev->cman.std_cmap.map);
+        } else
+#endif
+{ // code}
+
+
+
+#if HaveStdCMap
+        /* Get a standard color map if available */
+        xdev->cman.std_cmap.map = x_get_std_cmap(xdev, XA_RGB_GRAY_MAP);
+        if (xdev->cman.std_cmap.map ||
+            (xdev->vinfo->class == StaticGray && alloc_std_cmap(xdev, false))
+            ) {
+            xdev->color_info.dither_grays =
+                xdev->cman.std_cmap.map->red_max + 1;
+            if (xdev->cman.std_cmap.map)
+                set_std_cmap(xdev, xdev->cman.std_cmap.map);
+        } else
+        
+        {
+        	//code
+        }
+        
+        
+        
+        
+        
+        gp_mswin.c
+        
+        
+        #ifdef WINDOWS_NO_UNICODE
+        if (!CreateProcess(NULL,
+#else
+        if (!CreateProcessW(NULL,
+#endif
+            command,  	   /* command line                       */
+            NULL,          /* process security attributes        */
+            NULL,          /* primary thread security attributes */
+            TRUE,          /* handles are inherited              */
+            0,             /* creation flags                     */
+            NULL,          /* environment                        */
+            NULL,          /* use parent's current directory     */
+            &siStartInfo,  /* STARTUPINFO pointer                */
+            &piProcInfo))  /* receives PROCESS_INFORMATION  */
+        {
+            handle = -1;
+        }
+        
+        
+        
+        gp_ntfs.c
+        
+        
+        #ifdef WINDOWS_NO_UNICODE
+            if (!FindNextFile(pfen->find_handle, &(pfen->find_data))) {
+#else
+            if (!FindNextFileW(pfen->find_handle, &(pfen->find_data))) {
+#endif
+                code = -1;
+                break;
+            }
+            
+            
+            
+            
+            gpmisc.c
+            
+            
+            #ifdef O_BINARY
+            /* Watcom C insists on this non-ANSI flag being set. */
+        case 'b':
+            flags |= O_BINARY;
+            break;
+#endif
+
+
+
+
+gsalloc.c
+
+
+            
+            
+            
+            
+                  if (cp) {
+#ifdef DEBUG
+            if (cp->cbot != (byte *)obj + old_rounded_size) {
+                lprintf3("resizing 0x%lx, old size %u, new size %u, cbot wrong!\n",
+                         (ulong)obj, old_rounded_size, size);
+                /* gs_abort */
+            } else
+#endifc
+                {
+                    cp->cbot = (byte *)excess_pre;
+                    return;
+                }
+                
+                
+                
+                
+                gsbitcom.c
+                
+                #if !ALPHA_LSB_FIRST		/* too messy to make it work */
+                    case 0xff:
+                        for (index = sraster; index != sskip; index += sraster)
+                            if (s[index] != 0xff)
+                                goto p;
+                        {
+                            int shift =
+                                (out_shift -= input_byte_out_bits) + out_bits;
+
+                            if (shift > 0)
+                                out |= input_byte_out_mask << shift;
+                            else {
+                                out |= input_byte_out_mask >> -shift;
+                                *d++ = out;
+                                out_shift += 8;
+                                out = input_byte_out_mask << (8 + shift);
+                            }
+                        }
+                        s++;
+                        continue;
+#endif
+
+
+
+                                        
+                                        
+                                        
+                                        
+                                        gscie.c
+                                        
+                                        
+                                        if (pcf->params.is_identity) {
+            if_debug1('c', "[c]is_linear(0x%lx) = true (is_identity)\n",
+                      (ulong)pcf);
+            pcf->params.linear.is_linear = true;
+            pcf->params.linear.origin = 0;
+            pcf->params.linear.scale = 1;
+        } else if (cache_is_linear(&pcf->params.linear, pcf)) {
+            if (pcf->params.linear.origin == 0 &&
+                fabs(pcf->params.linear.scale - 1) < 0.00001)
+                pcf->params.is_identity = true;
+            if_debug4('c',
+                      "[c]is_linear(0x%lx) = true, origin = %g, scale = %g%s\n",
+                      (ulong)pcf, pcf->params.linear.origin,
+                      pcf->params.linear.scale,
+                      (pcf->params.is_identity ? " (=> is_identity)" : ""));
+        }
+#ifdef DEBUG
+        else
+            if_debug1('c', "[c]linear(0x%lx) = false\n", (ulong)pcf);
+#endif
+
+
+
+
+float v =
+                        (pcache->floats.values[i] - prange->rmin) * scale
+#ifndef CIE_RENDER_TABLE_INTERPOLATE
+                        + 0.5
+#endif
+                        ;
+                        
+                        
+                        
+                        
+                        
+#ifdef OPTIMIZE_CIE_MAPPING
+    if (pcrd->caches.EncodeLMN.caches[0].floats.params.is_identity &&
+        pcrd->caches.EncodeLMN.caches[1].floats.params.is_identity &&
+        pcrd->caches.EncodeLMN.caches[2].floats.params.is_identity
+        ) {
+        /* Fold step 4 into step 3. */
+        if_debug0('c', "[c]EncodeLMN is identity, folding MatrixABC(Encode) into MatrixPQR'+LMN.\n");
+        cie_matrix_mult3(&pcrd->MatrixABCEncode, &pcrd->MatrixPQR_inverse_LMN,
+                         &mat3);
+        pjc->skipEncodeLMN = true;
+    } else
+#endif /* OPTIMIZE_CIE_MAPPING */
+    {
+        if_debug0('c', "[c]EncodeLMN is not identity.\n");
+        mat3 = pcrd->MatrixPQR_inverse_LMN;
+        pjc->skipEncodeLMN = false;
+    }
+    
+    
+    
+    #ifdef OPTIMIZE_CIE_MAPPING
+    if (pjc->TransformPQR.caches[0].floats.params.is_identity &
+        pjc->TransformPQR.caches[1].floats.params.is_identity &
+        pjc->TransformPQR.caches[2].floats.params.is_identity
+        ) {
+        /* Fold step 3 into step 2. */
+        if_debug0('c', "[c]TransformPQR is identity, folding MatrixPQR'+LMN into MatrixLMN+PQR.\n");
+        cie_matrix_mult3(&mat3, &MatrixLMN_PQR, &mat2);
+        pjc->skipPQR = true;
+    } else
+#endif /* OPTIMIZE_CIE_MAPPING */
+    {
+        if_debug0('c', "[c]TransformPQR is not identity.\n");
+        mat2 = MatrixLMN_PQR;
+        for (j = 0; j < 3; j++) {
+            cie_cache_restrict(&pjc->TransformPQR.caches[j].floats,
+                               &pcrd->RangePQR.ranges[j]);
+        }
+        cie_cache_mult3(&pjc->TransformPQR, &mat3, CACHE_THRESHOLD);
+        pjc->skipPQR = false;
+    }
+    
+    
+    
+    #ifdef OPTIMIZE_CIE_MAPPING
+    if (pcie->caches.DecodeLMN[0].floats.params.is_identity &
+        pcie->caches.DecodeLMN[1].floats.params.is_identity &
+        pcie->caches.DecodeLMN[2].floats.params.is_identity
+        ) {
+        if_debug0('c', "[c]DecodeLMN is identity, folding MatrixLMN+PQR into MatrixABC.\n");
+        if (!pabc) {
+            pjc->skipDecodeLMN = mat2.is_identity;
+            pjc->skipDecodeABC = false;
+            if (!pjc->skipDecodeLMN) {
+                for (j = 0; j < 3; j++) {
+                    cie_cache_mult(&pjc->DecodeLMN.caches[j], &mat2.cu + j,
+                                   &pcie->caches.DecodeLMN[j].floats,
+                                   CACHE_THRESHOLD);
+                }
+                cie_cache3_set_interpolation(&pjc->DecodeLMN);
+            }
+        } else {
+            /*
+             * Fold step 2 into step 1.  This is a little different because
+             * the data for step 1 are in the color space structure.
+             */
+            gs_matrix3 mat1;
+
+            cie_matrix_mult3(&mat2, &pabc->MatrixABC, &mat1);
+            for (j = 0; j < 3; j++) {
+                cie_cache_mult(&pjc->DecodeLMN.caches[j], &mat1.cu + j,
+                               &pabc->caches.DecodeABC.caches[j].floats,
+                               CACHE_THRESHOLD);
+            }
+            cie_cache3_set_interpolation(&pjc->DecodeLMN);
+            pjc->skipDecodeLMN = false;
+            pjc->skipDecodeABC = true;
+        }
+    } else
+#endif /* OPTIMIZE_CIE_MAPPING */
+    {
+        if_debug0('c', "[c]DecodeLMN is not identity.\n");
+        for (j = 0; j < 3; j++) {
+            cie_cache_mult(&pjc->DecodeLMN.caches[j], &mat2.cu + j,
+                           &pcie->caches.DecodeLMN[j].floats,
+                           CACHE_THRESHOLD);
+        }
+        cie_cache3_set_interpolation(&pjc->DecodeLMN);
+        pjc->skipDecodeLMN = false;
+        pjc->skipDecodeABC = pabc != 0 && pabc->caches.skipABC;
+    }
+    
+    
+    
+    
+    gsdparam.c
+    
+    
+    if (
+        /* Standard parameters */
+        (code = param_write_name(plist, "OutputDevice", &dns)) < 0 ||
+#ifdef PAGESIZE_IS_MEDIASIZE
+        (code = param_write_float_array(plist, "PageSize", &msa)) < 0 ||
+#endif
+        (code = (pcms.data == 0 ? 0 :
+                 param_write_name(plist, "ProcessColorModel", &pcms))) < 0 ||
+        (code = param_write_float_array(plist, "HWResolution", &hwra)) < 0 ||
+        (code = (dev->ImagingBBox_set ?
+                 param_write_float_array(plist, "ImagingBBox", &ibba) :
+                 param_write_null(plist, "ImagingBBox"))) < 0 ||
+        (code = param_write_float_array(plist, "Margins", &ma)) < 0 ||
+        (code = param_write_int(plist, "MaxSeparations", &mns)) < 0 ||
+        (code = (dev->NumCopies_set < 0 ||
+                 (*dev_proc(dev, get_page_device))(dev) == 0 ? 0:
+                 dev->NumCopies_set ?
+                 param_write_int(plist, "NumCopies", &dev->NumCopies) :
+                 param_write_null(plist, "NumCopies"))) < 0 ||
+        (code = param_write_name_array(plist, "SeparationColorNames", &scna)) < 0 ||
+        (code = param_write_bool(plist, "Separations", &seprs)) < 0 ||
+        (code = param_write_bool(plist, "UseCIEColor", &dev->UseCIEColor)) < 0 ||
+        /* Non-standard parameters */
+        /* Note:  if change is made in NUM_DEVICE_PROFILES we need to name
+           that profile here for the device parameter on the command line */
+        (code = param_write_bool(plist, "DeviceGrayToK", &devicegraytok)) < 0 ||
+        (code = param_write_bool(plist, "UseFastColor", &usefastcolor)) < 0 ||
+        (code = param_write_string(plist,"OutputICCProfile", &(profile_array[0]))) < 0 ||
+        (code = param_write_string(plist,"GraphicICCProfile", &(profile_array[1]))) < 0 ||
+        (code = param_write_string(plist,"ImageICCProfile", &(profile_array[2]))) < 0 ||
+        (code = param_write_string(plist,"TextICCProfile", &(profile_array[3]))) < 0 ||
+        (code = param_write_string(plist,"ProofProfile", &(proof_profile))) < 0 ||
+        (code = param_write_string(plist,"DeviceLinkProfile", &(link_profile))) < 0 ||
+        (code = param_write_int(plist,"RenderIntent", (const int *) (&(profile_intents[0])))) < 0 ||
+        (code = param_write_int(plist,"GraphicIntent", (const int *) &(profile_intents[1]))) < 0 ||
+        (code = param_write_int(plist,"ImageIntent", (const int *) &(profile_intents[2]))) < 0 ||
+        (code = param_write_int(plist,"TextIntent", (const int *) &(profile_intents[3]))) < 0 ||
+        (code = param_write_int_array(plist, "HWSize", &hwsa)) < 0 ||
+        (code = param_write_float_array(plist, ".HWMargins", &hwma)) < 0 ||
+        (code = param_write_float_array(plist, ".MarginsHWResolution", &mhwra)) < 0 ||
+        (code = param_write_float_array(plist, ".MediaSize", &msa)) < 0 ||
+        (code = param_write_string(plist, "Name", &dns)) < 0 ||
+        (code = param_write_int(plist, "Colors", &colors)) < 0 ||
+        (code = param_write_int(plist, "BitsPerPixel", &depth)) < 0 ||
+        (code = param_write_int(plist, "GrayValues", &GrayValues)) < 0 ||
+        (code = param_write_long(plist, "PageCount", &dev->PageCount)) < 0 ||
+        (code = param_write_bool(plist, ".IgnoreNumCopies", &dev->IgnoreNumCopies)) < 0 ||
+        (code = param_write_int(plist, "TextAlphaBits",
+                                &dev->color_info.anti_alias.text_bits)) < 0 ||
+        (code = param_write_int(plist, "GraphicsAlphaBits",
+                                &dev->color_info.anti_alias.graphics_bits)) < 0 ||
+        (code = param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams)) < 0 ||
+        (code = param_write_int(plist, "MaxPatternBitmap", &dev->MaxPatternBitmap)) < 0
+        )
+        return code;
+        
+        
+        
+        if ((hwsa.data[0] <= 0 && hwsa.data[0] != dev->width) ||
+            (hwsa.data[1] <= 0 && hwsa.data[1] != dev->height)
+        )
+            ecode = gs_note_error(gs_error_rangecheck);
+#define max_coord (max_fixed / fixed_1)
+#if max_coord < max_int
+        else if (hwsa.data[0] > max_coord || hwsa.data[1] > max_coord)
+            ecode = gs_note_error(gs_error_limitcheck);
+#endif
+#undef max_coord
+        else
+            break;
+            
+            
+            
+            
+            gsfont.c
+            
+            #  ifdef DEBUG
+    if (!gs_debug_c('.'))
+#  endif
+    {				/* Try allocating a very large cache. */
+        /* If this fails, allocate a small one. */
+        pdir = gs_font_dir_alloc2_limits(struct_mem, bits_mem,
+                                         smax_LARGE, bmax_LARGE, mmax_LARGE,
+                                         cmax_LARGE, blimit_LARGE);
+    }
+    if (pdir == 0)
+#endif
+        pdir = gs_font_dir_alloc2_limits(struct_mem, bits_mem,
+                                         smax_SMALL, bmax_SMALL, mmax_SMALL,
+                                         cmax_SMALL, blimit_SMALL);
+                                         
+                                         
+                                         
+                                         
+                                         gsiodev.c
+                                         
+                                         
+                                         switch (eno) {
+#ifdef ENOENT
+        case ENOENT:
+            return_error(gs_error_undefinedfilename);
+#endif
+#ifdef ENOFILE
+#  ifndef ENOENT
+#    define ENOENT ENOFILE
+#  endif
+#  if ENOFILE != ENOENT
+        case ENOFILE:
+            return_error(gs_error_undefinedfilename);
+#  endif
+#endif
+#ifdef ENAMETOOLONG
+        case ENAMETOOLONG:
+            return_error(gs_error_undefinedfilename);
+#endif
+#ifdef EACCES
+        case EACCES:
+            return_error(gs_error_invalidfileaccess);
+#endif
+#ifdef EMFILE
+        case EMFILE:
+            return_error(gs_error_limitcheck);
+#endif
+#ifdef ENFILE
+        case ENFILE:
+            return_error(gs_error_limitcheck);
+#endif
+        default:
+            return_error(gs_error_ioerror);
+    }
+    
+    
+    
+    gslib.c
+    
+    
+    static int (*tests[]) (gs_state *, gs_memory_t *) =
+{
+    test1, test2, test3, test4, test5,
+        test6, test7, test8, 0
+#ifdef CAPTURE
+        test10
+#endif
+};
+
+
+
+gspath1.c
+
+
+if ((arc->action != arc_nothing &&
+#if !PRECISE_CURRENTPOINT
+         (code = gs_point_transform2fixed(&pis->ctm, x0, y0, &p0)) < 0) ||
+        (code = gs_point_transform2fixed(&pis->ctm, xt, yt, &pt)) < 0 ||
+        (code = gs_point_transform2fixed(&pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0
+#else
+         (code = gs_point_transform2fixed_rounding(&pis->ctm, x0, y0, &p0)) < 0) ||
+        (code = gs_point_transform2fixed_rounding(&pis->ctm, xt, yt, &pt)) < 0 ||
+        (code = gs_point_transform2fixed_rounding(&pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0
+#endif
+        )
+        return code;
+        
+        
+        
+        gsroprun.c
+        
+        
+        if (swap)
+    {
+        op->runswap = op->run;
+        op->run = rop_run_swapped;
+    }
+#ifdef RECORD_ROP_USAGE
+    else
+    {
+        op->runswap = op->run;
+        op->run = record_run;
+    }
+#endif
+
+
+
+
+gsroprun1.h
+
+
+if (len > 0) {
+        /* Simple middle case (complete destination chunks). */
+#ifdef S_SKEW
+        if (s_skew == 0) {
+#ifdef T_SKEW
+            if (t_skew == 0) {
+                do {
+                    SPECIFIC_CODE(*d, *d, *s++, *t++);
+                    d++;
+                    len -= CHUNKSIZE;
+                } while (len > 0);
+            } else
+#endif /* !defined(T_SKEW) */
+            {
+                do {
+                    FETCH_T;
+                    SPECIFIC_CODE(*d, *d, *s++, T);
+                    d++;
+                    len -= CHUNKSIZE;
+                } while (len > 0);
+            }
+        } else
+#endif /* !defined(S_SKEW) */
+        {
+#ifdef T_SKEW
+            if (t_skew == 0) {
+                do {
+                    FETCH_S;
+                    SPECIFIC_CODE(*d, *d, S, *t++);
+                    d++;
+                    len -= CHUNKSIZE;
+                } while (len > 0);
+            } else
+#endif /* !defined(T_SKEW) */
+            {
+                do {
+                    FETCH_S;
+                    FETCH_T;
+                    SPECIFIC_CODE(*d, *d, S, T);
+                    d++;
+                    len -= CHUNKSIZE;
+                } while (len > 0);
+            }
+        }
+    }
+    
+    
+    
+    gsroprun24.h
+    
+    
+    #ifdef S_1BIT
+#if S_1BIT
+    if (op->flags & rop_s_1bit) {
+#endif /* S_1BIT */
+        s = op->s.b.ptr + (op->s.b.pos>>3);
+        sroll = 8-(op->s.b.pos & 7);
+        sc[0] = GET24(&op->scolors[0]);
+        sc[1] = GET24(&op->scolors[3]);
+#if S_1BIT
+    } else
+        sroll = 0;
+#endif /* S_1BIT */
+#endif /* defined(S_1BIT) */
+#ifdef T_1BIT
+#if T_1BIT
+    if (op->flags & rop_t_1bit) {
+#endif /* T_1BIT */
+        t = op->t.b.ptr + (op->t.b.pos>>3);
+        troll = 8-(op->t.b.pos & 7);
+        tc[0] = GET24(&op->tcolors[0]);
+        tc[1] = GET24(&op->tcolors[3]);
+#if T_1BIT
+    } else
+        troll = 0;
+#endif /* T_1BIT */
+#endif /* defined(T_1BIT) */
+    do {
+#if defined(S_USED) && !defined(S_CONST)
+        rop_operand S;
+#endif /* defined(S_USED) && !defined(S_CONST) */
+#if defined(T_USED) && !defined(T_CONST)
+        rop_operand T;
+#endif /* defined(T_USED) && !defined(T_CONST) */
+#if defined(S_1BIT) && !S_1BIT
+        if (sroll == 0) {
+#endif /* defined(S_1BIT) && !S_1BIT */
+#if !defined(S_1BIT) || !S_1BIT
+            FETCH_S;
+#endif /* !defined(S_1BIT) || !S_1BIT */
+#if defined(S_1BIT) && !S_1BIT
+        } else
+#endif /* defined(S_1BIT) && !S_1BIT */
+        {
+#ifdef S_1BIT
+            --sroll;
+            S = sc[(*s >> sroll) & 1];
+            if (sroll == 0) {
+                sroll = 8;
+                s++;
+            }
+#endif /* S_1BIT */
+        }
+#if defined(T_1BIT) && !T_1BIT
+        if (troll == 0) {
+#endif /* defined(T_1BIT) && !T_1BIT */
+#if !defined(T_1BIT) || !T_1BIT
+            FETCH_T;
+#endif /* defined(T_1BIT) && !T_1BIT */
+#if defined(T_1BIT) && !T_1BIT
+        } else
+#endif /* defined(T_1BIT) && !T_1BIT */
+        {
+#ifdef T_1BIT
+            --troll;
+            T = tc[(*t >> troll) & 1];
+            if (troll == 0) {
+                troll = 8;
+                t++;
+            }
+#endif /* T_1BIT */
+        }
+        if (1
+#if defined(S_TRANS) && !defined(S_CONST)
+            && (S != strans)
+#endif /* defined(S_TRANS) && !defined(S_CONST) */
+#if defined(T_TRANS) && !defined(T_CONST)
+            && (T != ttrans)
+#endif /* defined(T_TRANS) && !defined(T_TRANS) */
+            ) {
+            rop_operand D;
+            SPECIFIC_CODE(D, GET24(d), S, T);
+            PUT24(d, D);
+        }
+        d += 3;
+    }
+    while (--len);
+}
+
+
+
+ if (1
+#if defined(S_TRANS) && !defined(S_CONST)
+            && (S != strans)
+#endif /* defined(S_TRANS) && !defined(S_CONST) */
+#if defined(T_TRANS) && !defined(T_CONST)
+            && (T != ttrans)
+#endif /* defined(T_TRANS) && !defined(T_TRANS) */
+            ) {
+            rop_operand D;
+            SPECIFIC_CODE(D, GET24(d), S, T);
+            PUT24(d, D);
+        }
+        
+        
+        
+        gsroprun8.h
+        
+        
+        #ifdef S_1BIT
+#if S_1BIT
+    if (op->flags & rop_s_1bit) {
+#endif /* S_1BIT */
+        s = op->s.b.ptr + (op->s.b.pos>>3);
+        sroll = 8-(op->s.b.pos & 7);
+#if S_1BIT
+    } else
+        sroll = 0;
+#endif /* S_1BIT */
+#endif /* defined(S_1BIT) */
+#ifdef T_1BIT
+#if T_1BIT
+    if (op->flags & rop_t_1bit) {
+#endif /* T_1BIT */
+        t = op->t.b.ptr + (op->t.b.pos>>3);
+        troll = 8-(op->t.b.pos & 7);
+#if T_1BIT
+    } else
+        troll = 0;
+#endif /* T_1BIT */
+#endif /* defined(T_1BIT) */
+    do {
+#if defined(S_USED) && !defined(S_CONST)
+        rop_operand S;
+#endif /* defined(S_USED) && !defined(S_CONST) */
+#if defined(T_USED) && !defined(T_CONST)
+        rop_operand T;
+#endif /* defined(T_USED) && !defined(T_CONST) */
+#if defined(S_1BIT) && !S_1BIT
+        if (sroll == 0) {
+#endif /* defined(S_1BIT) && !S_1BIT */
+#if !defined(S_1BIT) || !S_1BIT
+            FETCH_S;
+#endif /* !defined(S_1BIT) || !S_1BIT */
+#if defined(S_1BIT) && !S_1BIT
+        } else
+#endif /* defined(S_1BIT) && !S_1BIT */
+        {
+#ifdef S_1BIT
+            --sroll;
+            S = scolors[(*s >> sroll) & 1];
+            if (sroll == 0) {
+                sroll = 8;
+                s++;
+            }
+#endif /* S_1BIT */
+        }
+#if defined(T_1BIT) && !T_1BIT
+        if (troll == 0) {
+#endif /* defined(T_1BIT) && !T_1BIT */
+#if !defined(T_1BIT) || !T_1BIT
+            FETCH_T;
+#endif /* defined(T_1BIT) && !T_1BIT */
+#if defined(T_1BIT) && !T_1BIT
+        } else
+#endif /* defined(T_1BIT) && !T_1BIT */
+        {
+#ifdef T_1BIT
+            --troll;
+            T = tcolors[(*t >> troll) & 1];
+            if (troll == 0) {
+                troll = 8;
+                t++;
+            }
+#endif /* T_1BIT */
+        }
+        if (1
+#if defined(S_TRANS) && !defined(S_CONST)
+            && (S != strans)
+#endif /* defined(S_TRANS) && !defined(S_CONST) */
+#if defined(T_TRANS) && !defined(T_CONST)
+            && (T != ttrans)
+#endif /* defined(T_TRANS) && !defined(T_TRANS) */
+            ) {
+            SPECIFIC_CODE(*d, *d, S, T);
+        }
+        d++;
+    }
+    while (--len);
+}
+
+
+
+
+
+
+gxclrast.c
+
+
+if (cont == cmd_map_other) {
+        cbp = cmd_read_data(pcb, (byte *)mdata, count, cbp);
+
+#ifdef DEBUG
+        if (gs_debug_c('L')) {
+            uint i;
+
+            for (i = 0; i < count / sizeof(*mdata); ++i)
+                dprintf1(" 0x%04x", mdata[i]);
+            dputc('\n');
+        }
+    } else {
+        if_debug0('L', " none\n");
+#endif
+    }
+    
+    
+    gxdownscale.c
+    
+    
+    #ifndef DO_STUPID_ERROR_DIFFUSION
+        if (dst_bpc == 1)
+#endif
+        {
+            ds->errors = (int *)gs_alloc_bytes(dev->memory,
+                                               num_comps*(awidth+3)*sizeof(int),
+                                               "gx_downscaler(errors)");
+            if (ds->errors == NULL)
+            {
+                code = gs_note_error(gs_error_VMerror);
+                goto cleanup;
+            }
+            memset(ds->errors, 0, num_comps * (awidth+3) * sizeof(int));
+        }
+        
+        
+        
+        gxfill.c
+        
+        
+        if (p.monotonic_y && p.dir == DIR_HORIZONTAL &&
+                    !fo->pseudo_rasterization &&
+#ifdef FILL_ZERO_WIDTH
+                    (fo->adjust_below | fo->adjust_above) != 0) {
+#else
+                    fixed2int_pixround(p.pseg->pt.y - fo->adjust_below) <
+                    fixed2int_pixround(p.pseg->pt.y + fo->adjust_above)) {
+#endif
+                /* Add it here to avoid double processing in process_h_segments. */
+                code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
+                if (code < 0)
+                    return code;
+            }
+            
+            
+            gxfilltr.h
+            
+            
+            #ifdef FILL_ZERO_WIDTH
+                                if ( (xli == xi) && (PSEUDO_RASTERIZATION ||
+                                    (FILL_ADJUST && (fo.adjust_right | fo.adjust_left) != 0))) {
+#else
+                                if (PSEUDO_RASTERIZATION && xli == xi) {
+#endif
+                                    /*
+                                    * The scan is empty but we should paint something
+                                    * against a dropout. Choose one of two pixels which
+                                    * is closer to the "axis".
+                                    */
+                                    fixed xx = int2fixed(xli);
+
+                                    if (xx - flp->end.x < alp->end.x - xx)
+                                        ++xi;
+                                    else
+                                        --xli;
+                                }
+                                
+                                
+                                
+                                
+                                gxht_thresh.c
+                                
+                                
+                                #if LAND_BITS > 16
+        j = LAND_BITS;
+        do {
+#endif
+#ifdef HAVE_SSE2
+            threshold_16_SSE(thresh_ptr, contone_ptr, halftone_ptr);
+#else
+            threshold_16_bit(thresh_ptr, contone_ptr, halftone_ptr);
+#endif
+            thresh_ptr += 16;
+            position += 16;
+            halftone_ptr += 2;
+            contone_ptr += 16;
+#if LAND_BITS > 16
+            j -= 16;
+        } while (j > 0);
+#endif
+
+
+
+#if LAND_BITS > 16
+        j = LAND_BITS;
+        do {
+#endif
+#ifdef HAVE_SSE2
+            threshold_16_SSE(contone_ptr, thresh_ptr, halftone_ptr);
+#else
+            threshold_16_bit(contone_ptr, thresh_ptr, halftone_ptr);
+#endif
+            thresh_ptr += 16;
+            position += 16;
+            halftone_ptr += 2;
+            contone_ptr += 16;
+#if LAND_BITS > 16
+            j -= 16;
+        } while (j > 0);
+#endif
+
+
+
+
+
+gxoprect.c
+
+#if mono_fill_chunk_bytes > 2
+      case 16:
+        color = (color << 16) | color;
+        /* fall through */
+#endif
+#if mono_fill_chunk_bytes > 4
+      case 32:
+        color = (color << 32) | color;
+        break;
+#endif
+
+
+
+
+md5.c
+
+
+ if (*((const gs_md5_byte_t *)&w)) /* dynamic little-endian */
+#endif
+#if BYTE_ORDER <= 0		/* little-endian */
+        {
+            /*
+             * On little-endian machines, we can process properly aligned
+             * data without copying it.
+             */
+            if (!((data - (const gs_md5_byte_t *)0) & 3)) {
+                /* data are properly aligned */
+                X = (const gs_md5_word_t *)data;
+            } else {
+                /* not aligned */
+                memcpy(xbuf, data, 64);
+                X = xbuf;
+            }
+        }
+#endif
+#if BYTE_ORDER == 0
+        else			/* dynamic big-endian */
+#endif
+#if BYTE_ORDER >= 0		/* big-endian */
+        {
+            /*
+             * On big-endian machines, we must arrange the bytes in the
+             * right order.
+             */
+            const gs_md5_byte_t *xp = data;
+            int i;
+
+#  if BYTE_ORDER == 0
+            X = xbuf;		/* (dynamic only) */
+#  else
+#    define xbuf X		/* (static only) */
+#  endif
+            for (i = 0; i < 16; ++i, xp += 4)
+                xbuf[i] = xp[0] + (xp[1] << 8) + (xp[2] << 16) + (xp[3] << 24);
+        }
+#endif
+    }
+    
+    
+    md5.h
+    
+    
+    #ifdef __cplusplus
+extern "C"
+{
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+sfxfd.c
+
+
+switch (errn) {
+#ifdef EINTR
+    case EINTR: return true;
+#endif
+#if defined(EAGAIN) && (!defined(EINTR) || EAGAIN != EINTR)
+    case EAGAIN: return true;
+#endif
+#if defined(EWOULDBLOCK) && (!defined(EINTR) || EWOULDBLOCK != EINTR) && (!defined(EAGAIN) || EWOULDBLOCK != EAGAIN)
+    case EWOULDBLOCK: return true;
+#endif
+    default: return false;
+    }
+    
+    
+    sha2.h
+    
+    
+    #ifdef __cplusplus
+extern "C"
+{
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+stream.c
+
+
+#if '\n' == '\r'		/* OS-9 or similar */
+                    if (!is_stdin(s_in))
+#endif
+                    {
+                        *pcount = count;
+                        *pin_eol = true;
+                        goto top;
+                    }
+                    
+                    
+                    
+                    ttcalc.h
+                    
+                    #ifdef __cplusplus
+extern "C"
+{
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+ttinterp.c
+
+
+#if 0
+      if ( BOUNDS( A, CUR.zp0.n_points ) )
+#else
+      /* igorm changed : allow phantom points (Altona.Page_3.2002-09-27.pdf). */
+      if ( BOUNDS( A, CUR.zp0.n_points + 2 ) )
+#endif
+      {
+/*        CUR.error = TT_Err_Invalid_Reference;*/
+        return;
+      }
+      
+      
+      ttinterp.h
+      
+                          #ifdef __cplusplus
+extern "C"
+{
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+ttload.h
+
+                          #ifdef __cplusplus
+extern "C"
+{
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+ttobjs.h
+
+
+                          #ifdef __cplusplus
+extern "C"
+{
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+ttables.h
+
+
+                          #ifdef __cplusplus
+extern "C"
+{
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+ttype.h
+
+
+                          #ifdef __cplusplus
+extern "C"
+{
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+vms_x_fix.h
+
+
+                          #ifdef __cplusplus
+extern "C"
+{
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif

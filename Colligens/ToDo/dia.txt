@@ -1,0 +1,199 @@
+app_procs.c
+
+// OK
+static void process_opts(int argc, char **argv,
+#if USE_GOPTION
+			 GOptionContext* context, GOptionEntry options[],
+#elif defined HAVE_POPT
+			 poptContext poptCtx, struct poptOption options[],
+#endif
+			 GSList **files, char **export_file_name,
+			 char **export_file_format, char **size,
+			 char **show_layers, gboolean *nosplash);
+			 
+
+  
+	     
+	     
+// OK 
+static void
+process_opts(int argc, char **argv,
+#if USE_GOPTION
+	     GOptionContext *context, GOptionEntry options[],
+#elif defined HAVE_POPT
+	     poptContext poptCtx, struct poptOption options[],
+#endif
+	     GSList **files, char **export_file_name,
+	     char **export_file_format, char **size,
+	     char **show_layers, gboolean* nosplash)
+{
+#if defined HAVE_POPT && !USE_GOPTION
+  int rc = 0;
+  poptCtx = poptGetContext(PACKAGE, argc, (const char **)argv, options, 0);
+  poptSetOtherOptionHelp(poptCtx, _("[OPTION...] [FILE...]"));
+  while (rc >= 0) {
+    if((rc = poptGetNextOpt(poptCtx)) < -1) {
+      fprintf(stderr,_("Error on option %s: %s.\nRun '%s --help' to see a full list of available command line options.\n"),
+	      poptBadOption(poptCtx, 0),
+	      poptStrerror(rc),
+	      argv[0]);
+      exit(1);
+    }
+    if(rc == 1) {
+      poptPrintHelp(poptCtx, stderr, 0);
+      exit(0);
+    }
+  }
+#endif
+  if (argv) {
+#if defined HAVE_POPT && !USE_GOPTION
+      while (poptPeekArg(poptCtx)) {
+          char *in_file_name = (char *)poptGetArg(poptCtx);
+	  if (*in_file_name != '\0')
+	    *files = g_slist_append(*files, in_file_name);
+      }
+      poptFreeContext(poptCtx);
+#elif USE_GOPTION
+      GError *error = NULL;
+      int i;
+      
+      context = g_option_context_new(_("[FILE...]"));
+      g_option_context_add_main_entries (context, options, GETTEXT_PACKAGE);
+#  if GTK_CHECK_VERSION(2,5,7)
+      /* at least Gentoo was providing GLib-2.6 but Gtk+-2.4.14 */
+      g_option_context_add_group (context, gtk_get_option_group (FALSE));
+#  endif
+      if (!g_option_context_parse (context, &argc, &argv, &error)) {
+        if (error) { /* IMO !error here is a bug upstream, triggered with --gdk-debug=updates */
+	g_print ("%s", error->message);
+	  g_error_free (error);
+	} else {
+	  g_print ("Invalid option?");
+	}
+	
+        g_option_context_free(context);
+	exit(0);
+      }
+      if (argc < 2) {
+        g_option_context_free(context);
+	return;
+      }
+      for (i = 1; i < argc; i++) {
+	if (!g_file_test (argv[i], G_FILE_TEST_IS_REGULAR)) {
+	  g_print (_("'%s' not found!\n"), argv[i]);
+          g_option_context_free(context);
+	  exit(2);
+	}
+	*files = g_slist_append(*files, argv[i]);
+      }
+      g_option_context_free(context);
+#else
+      int i;
+
+      for (i=1; i<argc; i++) {
+          char *in_file_name = argv[i]; /* unless it's an option... */
+
+          if (0==strcmp(argv[i],"-t")) {
+              if (i < (argc-1)) {
+                  i++;
+                  *export_file_format = argv[i];
+                  continue;
+              }
+          } else if (0 == strcmp(argv[i],"-e")) {
+              if (i < (argc-1)) {
+                  i++;
+                  *export_file_name = argv[i];
+                  continue;
+              }
+          } else if (0 == strcmp(argv[i],"-s")) {
+              if (i < (argc-1)) {
+                  i++;
+                  *size = argv[i];
+                  continue;
+              }
+          } else if (0 == strcmp(argv[i],"-L")) {
+              if (i < (argc-1)) {
+                  i++;
+                  *show_layers = argv[i];
+                  continue;
+              }
+          } else if (0 == strcmp(argv[i],"-n")) {
+	      *nosplash = 1;
+	      continue;
+          }
+	  *files = g_slist_append(*files, in_file_name);
+      }
+#endif
+  }
+  if (*export_file_name || *export_file_format || *size)
+    dia_is_interactive = FALSE;
+}
+
+---------------------------------------------------------------
+commands.c
+
+// OK
+#ifdef G_OS_WIN32
+  /* This option could be used with Gnome too. Does it make sense there ? */
+  if (!prefs.prefer_psprint)
+    diagram_print_gdi(dia);
+  else
+#endif
+    diagram_print_ps(dia);
+    
+-----------------------------------------------------------------
+dia-app-icons.h (the whole file..)
+
+// FALTA
+#ifdef __SUNPRO_C
+#pragma align 4 (dia_connectable_icon)
+#endif
+#ifdef __GNUC__
+static const guint8 dia_connectable_icon[] __attribute__ ((__aligned__ (4))) = 
+#else
+static const guint8 dia_connectable_icon[] = 
+#endif
+{ ""
+  // elements
+}
+  
+-------------------------------------
+
+        
+--------------------------------
+menus.c
+
+
+// FALTA (Array fora de fun��o)
+static const GtkToggleActionEntry display_toggle_entries[] = 
+{
+#ifdef GTK_STOCK_FULLSCREEN /* added with gtk+-2.8, but no reason to depend on it */
+    { "ViewFullscreen", GTK_STOCK_FULLSCREEN, NULL, "F11", NULL, G_CALLBACK (view_fullscreen_callback) },
+#else
+    { "ViewFullscreen", NULL, N_("Fullscr_een"), "F11", NULL, G_CALLBACK (view_fullscreen_callback) },
+#endif
+#ifdef HAVE_LIBART
+    { "ViewAntialiased", NULL, N_("_AntiAliased"), NULL, NULL, G_CALLBACK (view_aa_callback) },
+#else
+    /* we must have all actions registered to avoid configuration specific ui-files and crashing in GTK+,
+    * see: http://bugzilla.gnome.org/show_bug.cgi?id=396161
+    */
+    { "ViewAntialiased", NULL, N_("_AntiAliased"), NULL, NULL, NULL },
+#endif
+    { "ViewShowgrid", NULL, N_("Show _Grid"), NULL, NULL, G_CALLBACK (view_visible_grid_callback) },
+    { "ViewSnaptogrid", NULL, N_("_Snap To Grid"), NULL, NULL, G_CALLBACK (view_snap_to_grid_callback) },
+    { "ViewSnaptoobjects", NULL, N_("Snap To _Objects"), NULL, NULL, G_CALLBACK (view_snap_to_objects_callback) },
+    { "ViewShowrulers", NULL, N_("Show _Rulers"), NULL, NULL, G_CALLBACK (view_toggle_rulers_callback)  },
+    { "ViewShowconnectionpoints", NULL, N_("Show _Connection Points"), NULL, NULL, G_CALLBACK (view_show_cx_pts_callback) }
+};
+
+-------------------
+sheets_dialog_callbacks.c
+
+// OK
+
+#if CAN_EDIT_SHEET_NAME
+  if (sm->sheet.scope == SHEET_SCOPE_SYSTEM)
+#endif
+    gtk_widget_set_sensitive(entry, FALSE);
+  

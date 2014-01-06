@@ -1,0 +1,1195 @@
+fvwm
+
+bindings.c
+
+if (type == KEY_BINDING)
+      n1 = sscanf(token,"%200s", key_string); /* see len of key_string above */
+#ifdef HAVE_STROKE
+    else if (type == STROKE_BINDING)
+    {
+      int num = 0;
+      int j;
+
+      n1 = 1;
+      i = 0;
+      if (token[0] == 'N' && token[1] != '\0')
+        num = 1;
+      j=i+num;
+      while(n1 && token[j] != '\0' && i < STROKE_MAX_SEQUENCE)
+      {
+        if (!isdigit(token[j]))
+          n1 = 0;
+        if (num)
+        {
+          /* Numeric pad to Telephone  */
+          if ('7' <= token[j] && token[j] <= '9')
+            token[j] -= 6;
+          else if ('1' <= token[j] && token[j] <= '3')
+            token[j] += 6;
+        }
+        stroke[i] = token[j];
+        i++;
+        j=i+num;
+      }
+      stroke[i] = '\0';
+      if (strlen(token) > STROKE_MAX_SEQUENCE + num)
+      {
+        if (!is_silent)
+          fvwm_msg(WARN, "ParseBinding",
+            "Too long stroke sequence in line %s"
+            "Only %i elements will be taken into account.\n",
+            tline, STROKE_MAX_SEQUENCE);
+      }
+    }
+#endif /* HAVE_STROKE */
+    else
+    {
+      n1 = sscanf(token, "%d", &button);
+      if (button < 0 || button > NUMBER_OF_MOUSE_BUTTONS)
+      {
+	if (!is_silent)
+	  fvwm_msg(ERR, "ParseBinding",
+	    "Illegal mouse button in line %s", tline);
+	free(token);
+	return 0;
+      }
+    }
+    
+    
+    
+    borders.c
+    
+    //#ifdef MINI_ICONS
+//  case MiniIconButton:
+//  case PixmapButton:
+//  case TiledPixmapButton:
+//    if (type == PixmapButton || type == TiledPixmapButton)
+//    {
+//      p = df->u.p;
+//    }
+//    else
+//    {
+//      if (!t->mini_icon)
+//	break;
+//      p = t->mini_icon;
+//    }
+//#else
+//  case PixmapButton:
+//  case TiledPixmapButton:
+//    p = df->u.p;
+//#endif /* MINI_ICONS */
+
+
+
+
+#ifdef MULTISTYLE
+	  for (; tsdf; tsdf = tsdf->next)
+#endif
+	  {
+	    DrawButton(t, t->button_w[i], t->title_g.height, t->title_g.height,
+		       tsdf, cd->relief_gc, cd->shadow_gc,
+		       cd->fore_color, cd->back_color, is_lowest,
+		       TB_MWM_DECOR_FLAGS(GetDecor(t, buttons[i])), 1, NULL,
+		       pass_bg_pixmap);
+	    is_lowest = False;
+	  }
+	}
+	is_lowest = True;
+#ifdef MULTISTYLE
+	for (; df; df = df->next)
+#endif
+	{
+	  DrawButton(t, t->button_w[i], t->title_g.height, t->title_g.height,
+		     df, cd->relief_gc, cd->shadow_gc,
+		     cd->fore_color, cd->back_color, is_lowest,
+		     TB_MWM_DECOR_FLAGS(GetDecor(t, buttons[i])), 1, NULL,
+		     pass_bg_pixmap);
+	  is_lowest = False;
+	}
+	
+	
+	
+	
+	
+	#ifdef MULTISTYLE
+      for (; df; df = df->next)
+#endif
+      {
+	DrawButton(
+	  t, t->title_w, t->title_g.width, t->title_g.height, df, sgc,
+	  rgc, cd->fore_color, cd->back_color, is_lowest, 0, 1, rclip,
+          pass_bg_pixmap);
+	is_lowest = False;
+      }
+    }
+    else
+    {
+#ifdef MULTISTYLE
+      for (; df; df = df->next)
+#endif
+      {
+	DrawButton(
+	  t, t->title_w, t->title_g.width, t->title_g.height, df, rgc,
+	  sgc, cd->fore_color, cd->back_color, is_lowest, 0, 1, rclip,
+          pass_bg_pixmap);
+	is_lowest = False;
+      }
+    }
+    
+    
+    
+    builtins.c
+    
+    if (Scr.last_added_item.type == ADDED_MENU)
+    add_another_menu_item(action);
+  else if (Scr.last_added_item.type == ADDED_FUNCTION)
+    AddToFunction(Scr.last_added_item.item, action);
+#ifdef USEDECOR
+  else if (Scr.last_added_item.type == ADDED_DECOR) {
+    FvwmDecor *tmp = &Scr.DefaultDecor;
+    for (; tmp; tmp = tmp->next)
+      if (tmp == Scr.last_added_item.item)
+	break;
+    if (!tmp)
+      return;
+    AddToDecor(tmp, action);
+  }
+#endif /* USEDECOR */
+
+
+
+
+#if 0
+  if (strncasecmp(action,"exec",4)!=0)
+  {
+    cmd = (char *)safemalloc(strlen(action)+6);
+    strcpy(cmd,"exec ");
+    strcat(cmd,action);
+  }
+  else
+#endif
+  {
+    cmd = safestrdup(action);
+  }
+  
+  
+  
+  
+  
+  
+  if (file)
+	{
+	  if (verbose)
+	  {
+	    fvwm_msg(ERR,"ReadDecorFace", "couldn't load pixmap %s", file);
+	  }
+	  free(file);
+	}
+	return False;
+      }
+      if (file)
+      {
+	free(file);
+	file = NULL;
+      }
+
+      memset(&df->style, 0, sizeof(df->style));
+      if (strncasecmp(style,"Tiled",5)==0)
+	DFS_FACE_TYPE(df->style) = TiledPixmapButton;
+      else
+	DFS_FACE_TYPE(df->style) = PixmapButton;
+    }
+#ifdef MINI_ICONS
+    else if (strncasecmp (style, "MiniIcon", 8) == 0)
+    {
+      memset(&df->style, 0, sizeof(df->style));
+      DFS_FACE_TYPE(df->style) = MiniIconButton;
+#if 0
+/* Have to remove this again. This is all so badly written there is no chance
+ * to prevent a coredump and a memory leak the same time without a rewrite of
+ * large parts of the code. */
+      if (df->u.p)
+	DestroyPicture(dpy, df->u.p);
+#endif
+      df->u.p = NULL; /* pixmap read in when the window is created */
+    }
+#endif
+    else
+    {
+      if (verbose)
+      {
+	fvwm_msg(ERR,"ReadDecorFace", "unknown style %s: %s", style, action);
+      }
+      return False;
+    }
+    
+    
+    
+    
+    
+    
+    #ifdef MULTISTYLE
+    if (append)
+    {
+      DecorFace *head = &TB_STATE(*tb)[b];
+      DecorFace *tail = head;
+      DecorFace *next;
+
+      while (tail->next)
+      {
+	tail = tail->next;
+      }
+      tail->next = (DecorFace *)safemalloc(sizeof(DecorFace));
+      memcpy(tail->next, &tmpdf, sizeof(DecorFace));
+      if (DFS_FACE_TYPE(tail->next->style) == VectorButton &&
+	  DFS_FACE_TYPE((&TB_STATE(*tb)[b])->style) == DefaultVectorButton)
+      {
+	/* override the default vector style */
+	memcpy(&tail->next->style, &head->style, sizeof(DecorFaceStyle));
+	DFS_FACE_TYPE(tail->next->style) = VectorButton;
+	next = head->next;
+	head->next = NULL;
+	FreeDecorFace(dpy, head);
+	memcpy(head, next, sizeof(DecorFace));
+	free(next);
+      }
+      if (do_set_all)
+      {
+	for (i = 1; i < BS_MaxButtonState; ++i)
+	{
+	  if (i == b)
+	  {
+	    /* already done above */
+	    continue;
+	  }
+	  head = &TB_STATE(*tb)[i];
+	  tail = head;
+	  while (tail->next)
+	  {
+	    tail = tail->next;
+	  }
+	  tail->next = (DecorFace *)safemalloc(sizeof(DecorFace));
+	  memset(&DFS_FLAGS(tail->next->style), 0,
+		 sizeof(DFS_FLAGS(tail->next->style)));
+	  DFS_FACE_TYPE(tail->next->style) = SimpleButton;
+	  tail->next->next = NULL;
+	  ReadDecorFace(spec, tail->next, button, False);
+	  if (DFS_FACE_TYPE(tail->next->style) == VectorButton &&
+	      DFS_FACE_TYPE((&TB_STATE(*tb)[i])->style) == DefaultVectorButton)
+	  {
+	    /* override the default vector style */
+	    memcpy(&tail->next->style, &head->style, sizeof(DecorFaceStyle));
+	    DFS_FACE_TYPE(tail->next->style) = VectorButton;
+	    next = head->next;
+	    head->next = NULL;
+	    FreeDecorFace(dpy, head);
+	    memcpy(head, next, sizeof(DecorFace));
+	    free(next);
+	  }
+	}
+      }
+    }
+    else
+#endif
+    {
+      FreeDecorFace(dpy, &TB_STATE(*tb)[b]);
+      memcpy(&(TB_STATE(*tb)[b]), &tmpdf, sizeof(DecorFace));
+      if (do_set_all)
+      {
+	for (i = 1; i < BS_MaxButtonState; ++i)
+	{
+	  ReadDecorFace(spec, &TB_STATE(*tb)[i], button, False);
+	}
+      }
+    }
+    
+    
+    
+    #ifdef USEDECOR
+    /* update specific decor, or all */
+    if (found)
+    {
+      if (fw->decor == found)
+      {
+	DrawDecorations(fw, DRAW_ALL, True, True, None);
+	DrawDecorations(fw, DRAW_ALL, False, True, None);
+      }
+    }
+    else
+#endif
+    {
+      DrawDecorations(fw, DRAW_ALL, True, True, None);
+      DrawDecorations(fw, DRAW_ALL, False, True, None);
+    }
+    
+    
+    
+    
+	
+	
+    
+    
+    
+    
+    functions.c
+    
+    static const func_type func_config[] =
+{
+  CMD_ENTRY("+", CMD_Plus, F_ADDMENU2, 0),
+#ifdef MULTISTYLE
+  CMD_ENTRY("addbuttonstyle", CMD_AddButtonStyle, F_ADD_BUTTON_STYLE,
+	    FUNC_DECOR),
+  CMD_ENTRY("addtitlestyle", CMD_AddTitleStyle, F_ADD_TITLE_STYLE, FUNC_DECOR),
+#endif /* MULTISTYLE */
+#ifdef USEDECOR
+  CMD_ENTRY("addtodecor", CMD_AddToDecor, F_ADD_DECOR, 0),
+#endif /* USEDECOR */
+  CMD_ENTRY("addtofunc", CMD_AddToFunc, F_ADDFUNC, FUNC_ADD_TO),
+  CMD_ENTRY("addtomenu", CMD_AddToMenu, F_ADDMENU, 0),
+  CMD_ENTRY("all", CMD_All, F_ALL, 0),
+  CMD_ENTRY("animatedmove", CMD_AnimatedMove, F_ANIMATED_MOVE,
+	    FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("beep", CMD_Beep, F_BEEP, 0),
+  CMD_ENTRY("borderstyle", CMD_BorderStyle, F_BORDERSTYLE, FUNC_DECOR),
+  CMD_ENTRY("bugopts", CMD_BugOpts, F_BUG_OPTS, 0),
+  CMD_ENTRY("busycursor", CMD_BusyCursor, F_BUSY_CURSOR, 0),
+  CMD_ENTRY("buttonstate", CMD_ButtonState, F_BUTTON_STATE, 0),
+  CMD_ENTRY("buttonstyle", CMD_ButtonStyle, F_BUTTON_STYLE, FUNC_DECOR),
+#ifdef USEDECOR
+  CMD_ENTRY("changedecor", CMD_ChangeDecor, F_CHANGE_DECOR, FUNC_NEEDS_WINDOW),
+#endif /* USEDECOR */
+  CMD_ENTRY("changemenustyle", CMD_ChangeMenuStyle, F_CHANGE_MENUSTYLE, 0),
+  CMD_ENTRY("clicktime", CMD_ClickTime, F_CLICK, 0),
+  CMD_ENTRY("close", CMD_Close, F_CLOSE, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("colorlimit", CMD_ColorLimit, F_COLOR_LIMIT, 0),
+  CMD_ENTRY("colormapfocus", CMD_ColormapFocus, F_COLORMAP_FOCUS, 0),
+  CMD_ENTRY("colorset", CMD_Colorset, F_NOP, 0),
+  CMD_ENTRY("copymenustyle", CMD_CopyMenuStyle, F_COPY_MENU_STYLE, 0),
+  CMD_ENTRY("current", CMD_Current, F_CURRENT, 0),
+  CMD_ENTRY("cursormove", CMD_CursorMove, F_MOVECURSOR, 0),
+  CMD_ENTRY("cursorstyle", CMD_CursorStyle, F_CURSOR_STYLE, 0),
+  CMD_ENTRY("defaultcolors", CMD_DefaultColors, F_DFLT_COLORS, 0),
+  CMD_ENTRY("defaultcolorset", CMD_DefaultColorset, F_DFLT_COLORSET, 0),
+  CMD_ENTRY("defaultfont", CMD_DefaultFont, F_DFLT_FONT, 0),
+  CMD_ENTRY("defaulticon", CMD_DefaultIcon, F_DFLT_ICON, 0),
+  CMD_ENTRY("defaultlayers", CMD_DefaultLayers, F_DFLT_LAYERS, 0),
+  CMD_ENTRY("delete", CMD_Delete, F_DELETE, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("desk", CMD_Desk, F_GOTO_DESK, 0),
+  CMD_ENTRY("desktopsize", CMD_DesktopSize, F_SETDESK, 0),
+  CMD_ENTRY("destroy", CMD_Destroy, F_DESTROY, FUNC_NEEDS_WINDOW),
+#ifdef USEDECOR
+  CMD_ENTRY("destroydecor", CMD_DestroyDecor, F_DESTROY_DECOR, 0),
+#endif /* USEDECOR */
+  CMD_ENTRY("destroyfunc", CMD_DestroyFunc, F_DESTROY_FUNCTION, 0),
+  CMD_ENTRY("destroymenu", CMD_DestroyMenu, F_DESTROY_MENU, 0),
+  CMD_ENTRY("destroymenustyle", CMD_DestroyMenuStyle, F_DESTROY_MENUSTYLE, 0),
+  CMD_ENTRY("destroymoduleconfig", CMD_DestroyModuleConfig, F_DESTROY_MOD, 0),
+  CMD_ENTRY("destroystyle", CMD_DestroyStyle, F_DESTROY_STYLE, 0),
+  CMD_ENTRY("direction", CMD_Direction, F_DIRECTION, 0),
+  CMD_ENTRY("echo", CMD_Echo, F_ECHO, 0),
+  CMD_ENTRY("edgeresistance", CMD_EdgeResistance, F_EDGE_RES, 0),
+  CMD_ENTRY("edgescroll", CMD_EdgeScroll, F_EDGE_SCROLL, 0),
+  CMD_ENTRY("edgethickness", CMD_EdgeThickness, F_NOP, 0),
+  CMD_ENTRY("emulate", CMD_Emulate, F_EMULATE, 0),
+  CMD_ENTRY("escapefunc", CMD_EscapeFunc, F_ESCAPE_FUNC, 0),
+  CMD_ENTRY("exec", CMD_Exec, F_EXEC, 0),
+  CMD_ENTRY("execuseshell", CMD_ExecUseShell, F_EXEC_SETUP, 0),
+  CMD_ENTRY("fakeclick", CMD_FakeClick, F_FAKE_CLICK, 0),
+  CMD_ENTRY("flipfocus", CMD_FlipFocus, F_FLIP_FOCUS, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("focus", CMD_Focus, F_FOCUS, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("function", CMD_Function, F_FUNCTION, 0),
+  CMD_ENTRY("globalopts", CMD_GlobalOpts, F_GLOBAL_OPTS, 0),
+#ifdef GNOME
+  CMD_ENTRY("gnomebutton", CMD_GnomeButton, F_MOUSE, 0),
+  CMD_ENTRY("gnomeshowdesks", CMD_GnomeShowDesks, F_GOTO_DESK, 0),
+#endif /* GNOME */
+  CMD_ENTRY("gotodesk", CMD_GotoDesk, F_GOTO_DESK, 0),
+  CMD_ENTRY("gotodeskandpage", CMD_GotoDeskAndPage, F_GOTO_DESK, 0),
+  CMD_ENTRY("gotopage", CMD_GotoPage, F_GOTO_PAGE, 0),
+  CMD_ENTRY("hidegeometrywindow", CMD_HideGeometryWindow, F_HIDEGEOMWINDOW, 0),
+  CMD_ENTRY("hilightcolor", CMD_HilightColor, F_HICOLOR, 0),
+  CMD_ENTRY("hilightcolorset", CMD_HilightColorset, F_HICOLORSET, 0),
+  CMD_ENTRY("iconfont", CMD_IconFont, F_ICONFONT, 0),
+  CMD_ENTRY("iconify", CMD_Iconify, F_ICONIFY, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("iconpath", CMD_IconPath, F_ICON_PATH, 0),
+  CMD_ENTRY("ignoremodifiers", CMD_IgnoreModifiers, F_IGNORE_MODIFIERS, 0),
+  CMD_ENTRY("imagepath", CMD_ImagePath, F_IMAGE_PATH, 0),
+  CMD_ENTRY("key", CMD_Key, F_KEY, 0),
+  CMD_ENTRY("killmodule", CMD_KillModule, F_KILL_MODULE, 0),
+  CMD_ENTRY("layer", CMD_Layer, F_LAYER, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("lower", CMD_Lower, F_LOWER, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("maximize", CMD_Maximize, F_MAXIMIZE, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("menu", CMD_Menu, F_STAYSUP, 0),
+  CMD_ENTRY("menustyle", CMD_MenuStyle, F_MENUSTYLE, 0),
+  CMD_ENTRY("module", CMD_Module, F_MODULE, 0),
+  CMD_ENTRY("modulepath", CMD_ModulePath, F_MODULE_PATH, 0),
+  CMD_ENTRY("modulesynchronous", CMD_ModuleSynchronous, F_MODULE_SYNC, 0),
+  CMD_ENTRY("moduletimeout", CMD_ModuleTimeout, F_NOP, 0),
+  CMD_ENTRY("mouse", CMD_Mouse, F_MOUSE, 0),
+  CMD_ENTRY("move", CMD_Move, F_MOVE, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("movethreshold", CMD_MoveThreshold, F_MOVE_THRESHOLD, 0),
+  CMD_ENTRY("movetodesk", CMD_MoveToDesk, F_MOVE_TO_DESK, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("movetopage", CMD_MoveToPage, F_MOVE_TO_PAGE, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("movetoscreen", CMD_MoveToScreen, F_MOVE_TO_SCREEN,
+	    FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("next", CMD_Next, F_NEXT, 0),
+  CMD_ENTRY("none", CMD_None, F_NONE, 0),
+  CMD_ENTRY("nop", CMD_Nop, F_NOP, FUNC_DONT_REPEAT),
+  CMD_ENTRY("opaquemovesize", CMD_OpaqueMoveSize, F_OPAQUE, 0),
+  CMD_ENTRY("pick", CMD_Pick, F_PICK, 0),
+  CMD_ENTRY("piperead", CMD_PipeRead, F_READ, 0),
+  CMD_ENTRY("pixmappath", CMD_PixmapPath, F_PIXMAP_PATH, 0),
+  CMD_ENTRY("placeagain", CMD_PlaceAgain, F_PLACEAGAIN, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("pointerkey", CMD_PointerKey, F_POINTERKEY, 0),
+  CMD_ENTRY("popup", CMD_Popup, F_POPUP, 0),
+  CMD_ENTRY("prev", CMD_Prev, F_PREV, 0),
+  CMD_ENTRY("quit", CMD_Quit, F_QUIT, 0),
+  CMD_ENTRY("quitscreen", CMD_QuitScreen, F_QUIT_SCREEN, 0),
+  CMD_ENTRY("quitsession", CMD_QuitSession, F_QUIT_SESSION, 0),
+  CMD_ENTRY("raise", CMD_Raise, F_RAISE, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("raiselower", CMD_RaiseLower, F_RAISELOWER, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("read", CMD_Read, F_READ, 0),
+  CMD_ENTRY("recapture", CMD_Recapture, F_RECAPTURE, 0),
+  CMD_ENTRY("recapturewindow", CMD_RecaptureWindow, F_RECAPTURE_WINDOW, 0),
+  CMD_ENTRY("refresh", CMD_Refresh, F_REFRESH, 0),
+  CMD_ENTRY("refreshwindow", CMD_RefreshWindow, F_REFRESH, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY(PRE_REPEAT, CMD_Repeat, F_REPEAT, FUNC_DONT_REPEAT),
+  CMD_ENTRY("resize", CMD_Resize, F_RESIZE, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("resizemove", CMD_ResizeMove, F_RESIZEMOVE, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("restart", CMD_Restart, F_RESTART, 0),
+  CMD_ENTRY("savequitsession", CMD_SaveQuitSession, F_SAVE_QUIT_SESSION, 0),
+  CMD_ENTRY("savesession", CMD_SaveSession, F_SAVE_SESSION, 0),
+  CMD_ENTRY("scroll", CMD_Scroll, F_SCROLL, 0),
+  CMD_ENTRY("send_configinfo", CMD_Send_ConfigInfo, F_CONFIG_LIST,
+	    FUNC_DONT_REPEAT),
+  CMD_ENTRY("send_windowlist", CMD_Send_WindowList, F_SEND_WINDOW_LIST,
+	    FUNC_DONT_REPEAT),
+  CMD_ENTRY("sendtomodule", CMD_SendToModule, F_SEND_STRING, FUNC_DONT_REPEAT),
+  CMD_ENTRY("set_mask", CMD_set_mask, F_SET_MASK, FUNC_DONT_REPEAT),
+  CMD_ENTRY("set_nograb_mask", CMD_set_nograb_mask, F_SET_NOGRAB_MASK,
+	    FUNC_DONT_REPEAT),
+  CMD_ENTRY("set_sync_mask", CMD_set_sync_mask, F_SET_SYNC_MASK,
+	    FUNC_DONT_REPEAT),
+  CMD_ENTRY("setanimation", CMD_SetAnimation, F_SET_ANIMATION, 0),
+  CMD_ENTRY("setenv", CMD_SetEnv, F_SETENV, 0),
+  CMD_ENTRY(PRE_SILENT, CMD_Silent, F_SILENT, 0),
+  CMD_ENTRY("snapattraction", CMD_SnapAttraction, F_SNAP_ATT, 0),
+  CMD_ENTRY("snapgrid", CMD_SnapGrid, F_SNAP_GRID, 0),
+  CMD_ENTRY("stick", CMD_Stick, F_STICK, FUNC_NEEDS_WINDOW),
+#ifdef HAVE_STROKE
+  CMD_ENTRY("stroke", CMD_Stroke, F_STROKE, 0),
+  CMD_ENTRY("strokefunc", CMD_StrokeFunc, F_STROKE_FUNC, 0),
+#endif /* HAVE_STROKE */
+  CMD_ENTRY("style", CMD_Style, F_STYLE, 0),
+  CMD_ENTRY("thiswindow", CMD_ThisWindow, F_THISWINDOW, 0),
+  CMD_ENTRY("title", CMD_Title, F_TITLE, 0),
+  CMD_ENTRY("titlestyle", CMD_TitleStyle, F_TITLESTYLE, FUNC_DECOR),
+  CMD_ENTRY("unsetenv", CMD_UnsetEnv, F_SETENV, 0),
+  CMD_ENTRY("updatedecor", CMD_UpdateDecor, F_UPDATE_DECOR, 0),
+  CMD_ENTRY("updatestyles", CMD_UpdateStyles, F_UPDATE_STYLES, 0),
+  CMD_ENTRY("wait", CMD_Wait, F_WAIT, 0),
+  CMD_ENTRY("warptowindow", CMD_WarpToWindow, F_WARP, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("windowfont", CMD_WindowFont, F_WINDOWFONT, 0),
+  CMD_ENTRY("windowid", CMD_WindowId, F_WINDOWID, 0),
+  CMD_ENTRY("windowlist", CMD_WindowList, F_WINDOWLIST, 0),
+  CMD_ENTRY("windowshade", CMD_WindowShade, F_WINDOW_SHADE, FUNC_NEEDS_WINDOW),
+  CMD_ENTRY("windowshadeanimate", CMD_WindowShadeAnimate, F_SHADE_ANIMATE, 0),
+  CMD_ENTRY("xinerama", CMD_Xinerama, F_XINERAMA, 0),
+  CMD_ENTRY("xineramaprimaryscreen", CMD_XineramaPrimaryScreen,
+	    F_XINERAMAPRIMARYSCREEN, 0),
+  CMD_ENTRY("xineramasls", CMD_XineramaSls, F_XINERAMASLS, 0),
+  CMD_ENTRY("xineramaslssize", CMD_XineramaSlsSize, F_XINERAMASLSSIZE, 0),
+  CMD_ENTRY("xorpixmap", CMD_XorPixmap, F_XOR, 0),
+  CMD_ENTRY("xorvalue", CMD_XorValue, F_XOR, 0),
+  {"",0,0,0}
+};
+
+
+
+
+fvwm.c
+
+if ((s = setlocale(LC_CTYPE, "")) == NULL)
+    {
+      fvwm_msg(ERR, "main","Can't set locale. Check your $LC_CTYPE or $LANG.\n");
+    }
+    else if (!XSupportsLocale())
+    {
+      fvwm_msg(WARN, "main", "X does not support current locale: %s\n", s);
+    }
+#ifdef I18N_MB
+    else if (XSetLocaleModifiers("") == NULL)
+    {
+      fvwm_msg(WARN, "main", "Cannot set locale modifiers\n");
+    }
+#endif
+
+
+
+		 
+		 
+		 
+		 menus.c
+		 
+		 typedef enum
+{
+  SA_NONE = 0,
+  SA_ENTER,
+  SA_LEAVE,
+  SA_MOVE_ITEMS,
+  SA_FIRST,
+  SA_LAST,
+  SA_CONTINUE,
+  SA_WARPBACK,
+  SA_SELECT,
+#ifdef TEAR_OFF_MENUS
+  SA_TEAROFF,
+#endif
+  SA_ABORT
+} shortcut_action;
+
+
+
+#ifdef XK_XKB_KEYS
+  case XK_ISO_Left_Tab:
+#endif
+
+
+#ifdef TEAR_OFF_MENUS
+  case XK_BackSpace:
+fprintf(stderr,"menu torn off\n");
+    saction = SA_TEAROFF;
+    break;
+#endif
+
+
+#ifdef TEAR_OFF_MENUS
+  case SA_TEAROFF:
+    pmret->rc = MENU_TEAR_OFF;
+    return;
+#endif
+
+
+#ifdef TEAR_OFF_MENUS
+      case MENU_TEAR_OFF:
+#endif
+
+
+#ifdef TEAR_OFF_MENUS
+  case MENU_TEAR_OFF:
+fprintf(stderr,"got MENU_TEAR_OFF\n");
+    AddWindow(MR_WINDOW(pmp->menu), NULL);
+    break;
+#endif
+
+
+#if 0
+    case 99: /* PositionHints */
+      /* to be implemented */
+      break;
+#endif
+
+
+	    
+	    
+	    
+
+
+
+module_interface.c
+
+
+
+    
+    
+    
+    if (pipeName[module] != NULL)
+        {
+#ifndef WITHOUT_KILLMODULE_ALIAS_SUPPORT
+          if (pipeAlias[module] != NULL)
+          {
+            name = CatString3(pipeName[module], " ", pipeAlias[module]);
+          }
+          else
+#endif
+          {
+            name = pipeName[module];
+          }
+          
+          
+          
+          
+          screen.h
+          
+          
+          typedef enum
+{
+    /* button types */
+    DefaultVectorButton       ,
+    VectorButton              ,
+    SimpleButton              ,
+    GradientButton            ,
+    PixmapButton              ,
+    TiledPixmapButton         ,
+#ifdef MINI_ICONS
+    MiniIconButton            ,
+#endif
+    SolidButton
+} DecorFaceType;
+
+
+
+
+session.c
+
+
+while (fgets(s, sizeof(s), f))
+  {
+    i1 = 0; i2 = 0; i3 = 0; i4 = 0; i5 = 0; i6 = 0;
+    sscanf(s, "%4000s", s1);
+#ifdef SESSION
+    /* If we are restarting, [REAL_STATE_FILENAME] points
+     * to the file containing the true session state. */
+    if (!strcmp(s1, "[REAL_STATE_FILENAME]"))
+    {
+    /* migo: temporarily (?) moved to LoadWindowStates (trick for gnome-session)
+      sscanf(s, "%*s %s", s2);
+      setSmProperties (sm_conn, s2, SmRestartIfRunning);
+      setRealStateFilename(s2);
+    */
+    }
+    else
+#endif /* SESSION */
+    if (!strcmp(s1, "[DESKTOP]"))
+    {
+      sscanf(s, "%*s %i", &i1);
+      goto_desk(i1);
+    }
+    else if (!strcmp(s1, "[VIEWPORT]"))
+    {
+      sscanf(s, "%*s %i %i %i %i", &i1, &i2, &i3, &i4);
+    /* migo: we don't want to lose DeskTopSize in configurations,
+     * and it does not work well anyways - Gnome is not updated
+      Scr.VxMax = i3;
+      Scr.VyMax = i4;
+    */
+      MoveViewport(i1, i2, True);
+    }
+#if 0
+    /* migo (08-Dec-1999): we don't want to eliminate .fvwm2rc for now */
+    else if (/*!Restarting*/ 0)
+    {
+      /* Matthias: We don't want to restore too much state if
+       * we are restarting, since that would make restarting
+       * useless for rereading changed rc files. */
+      if (!strcmp(s1, "[SCROLL]"))
+      {
+        sscanf(s, "%*s %i %i %i %i %i %i", &i1, &i2, &i3, &i4, &i5, &i6);
+        Scr.EdgeScrollX = i1;
+        Scr.EdgeScrollY = i2;
+        Scr.ScrollResistance = i3;
+        Scr.MoveResistance = i4;
+        if (i5)
+          Scr.flags.edge_wrap_x = 1;
+        else
+          Scr.flags.edge_wrap_x = 0;
+        if (i6)
+          Scr.flags.edge_wrap_y = 1;
+        else
+          Scr.flags.edge_wrap_y = 0;
+      }
+      else if (!strcmp(s1, "[SNAP]"))
+      {
+        sscanf(s, "%*s %i %i %i %i", &i1, &i2, &i3, &i4);
+        Scr.SnapAttraction = i1;
+        Scr.SnapMode = i2;
+        Scr.SnapGridX = i3;
+        Scr.SnapGridY = i4;
+      }
+      else if (!strcmp(s1, "[MISC]"))
+      {
+        sscanf(s, "%*s %i %i %i", &i1, &i2, &i3);
+        Scr.ClickTime = i1;
+        Scr.ColormapFocus = i2;
+        Scr.ColorLimit = i3;
+      }
+      else if (!strcmp(s1, "[STYLE]"))
+      {
+        sscanf(s, "%*s %i %i", &i1, &i2);
+        Scr.gs.EmulateMWM = i1;
+        Scr.gs.EmulateWIN = i2;
+      }
+    }
+#endif
+  }
+  
+  
+  
+  
+ 
+  
+  
+  
+  
+  style.c
+  
+  
+  #ifdef MINI_ICONS
+        else if (StrEquals(token, "MINIICON"))
+        {
+	  found = True;
+	  GetNextToken(rest, &token);
+	  if (token)
+          {
+            SAFEFREE(SGET_MINI_ICON_NAME(*ptmpstyle));
+            SSET_MINI_ICON_NAME(*ptmpstyle, token);
+            ptmpstyle->flags.has_mini_icon = 1;
+            ptmpstyle->flag_mask.has_mini_icon = 1;
+            ptmpstyle->change_mask.has_mini_icon = 1;
+          }
+	  else
+	  {
+	    fvwm_msg(ERR, "CMD_Style",
+		     "MiniIcon Style requires an Argument");
+	  }
+        }
+#endif
+
+
+
+#ifdef USEDECOR
+        else if (StrEquals(token, "UseDecor"))
+        {
+	  found = True;
+	  SAFEFREE(SGET_DECOR_NAME(*ptmpstyle));
+	  GetNextToken(rest, &token);
+	  SSET_DECOR_NAME(*ptmpstyle, token);
+          ptmpstyle->flags.has_decor = (token != NULL);
+          ptmpstyle->flag_mask.has_decor = 1;
+          ptmpstyle->change_mask.has_decor = 1;
+        }
+#endif
+
+
+FScreen.c
+
+#ifdef HAVE_XINERAMA
+    if (XineramaQueryExtension(disp, &dummy_rc, &dummy_rc) &&
+	XineramaIsActive(disp))
+    {
+      int count;
+      XineramaScreenInfo *info;
+
+      info = XineramaQueryScreens(disp, &count);
+      total_screens_xi = count;
+      screens_xi = (XineramaScreenInfo *)
+	safemalloc(sizeof(XineramaScreenInfo) * (1 + count));
+      memcpy(screens_xi + 1, info, sizeof(XineramaScreenInfo) * count);
+      XFree(info);
+    }
+    else
+#endif
+    {
+      total_screens_xi = 0;
+      screens_xi =
+	(XineramaScreenInfo *)safemalloc(sizeof(XineramaScreenInfo)*1);
+    }
+    
+    
+    FvwmAuto.c
+    
+    
+     if (focus_win != raised_win)
+        {
+          myfprintf((stderr, "its a new window\n"));
+          have_new_window = 1;
+          raise_window_now = raise_immediately;
+        }
+#ifdef DEBUG
+        else fprintf(stderr, "no new window\n");
+#endif
+
+
+FvwmButtons.c
+
+if(!(buttonSwallow(b)&b_NoClose))
+	{
+	  if(buttonSwallow(b)&b_Kill)
+	  {
+	    XKillClient(Dpy,swin);
+#ifdef DEBUG_HANGON
+	    fprintf(stderr,"now killed\n");
+#endif
+	  }
+	  else
+	  {
+	    send_clientmessage(Dpy,swin,_XA_WM_DEL_WIN,CurrentTime);
+#ifdef DEBUG_HANGON
+	    fprintf(stderr,"now deleted\n");
+#endif
+	  }
+	}
+	else
+	{
+#ifdef DEBUG_HANGON
+	  fprintf(stderr,"now unswallowed\n");
+#endif
+	  XReparentWindow(Dpy,swin,Root,b->x,b->y);
+	  XMoveWindow(Dpy,swin,b->x,b->y);
+	  XResizeWindow(Dpy,swin,b->w,b->h);
+	  XSetWindowBorderWidth(Dpy,swin,b->bw);
+	  if ((b->flags & b_Panel))
+	  {
+	    XMapWindow(Dpy, swin);
+	  }
+	}
+      }
+#ifdef DEBUG_HANGON
+      else
+	fprintf(stderr,"already handled\n");
+#endif
+
+
+
+
+if(b->flags&b_Container && b->c->flags&b_Font)
+  {
+#ifdef DEBUG_LOADDATA
+    fprintf(stderr,", font2 \"%s\"",b->c->font_string);
+#endif
+    if(strncasecmp(b->c->font_string,"none",4)==0)
+      b->c->font=NULL;
+#ifdef I18N_MB
+    else if(!(b->c->fontset=XCreateFontSet(Dpy,b->c->font_string,&ml,&mc,&ds)))
+    {
+      fprintf(stderr,"%s: Couldn't load fontset %s\n",MyName,
+	      b->c->font_string);
+      if(b==UberButton)
+      {
+#ifdef STRICTLY_FIXED
+	if(!(b->c->fontset=XCreateFontSet(Dpy,"fixed",&ml,&mc,&ds)))
+	{
+#else
+	if(!(b->c->fontset=XCreateFontSet(
+	  Dpy,"-*-fixed-medium-r-normal-*-14-*-*-*-*-*-*-*",&ml,&mc,&ds)))
+	{
+#endif
+	  fprintf(stderr,"%s: Couldn't load fontset fixed\n",MyName);
+	  b->c->font = NULL;
+	}
+      }
+      else
+      {
+	b->c->font = NULL;
+	b->c->flags&=~b_Font;
+      }
+    }
+    else
+    {
+      /* fontset found */
+      XFontsOfFontSet(b->c->fontset, &fs_list, &ml);
+      b->c->font = fs_list[0];
+    }
+#else
+    else if(!(b->c->font=XLoadQueryFont(Dpy,b->c->font_string)))
+    {
+      fprintf(stderr,"%s: Couldn't load font %s\n",MyName,
+	      b->c->font_string);
+      if(b==UberButton)
+      {
+	if(!(b->c->font=XLoadQueryFont(Dpy,"fixed")))
+	  fprintf(stderr,"%s: Couldn't load font fixed\n",MyName);
+      }
+      else
+	b->c->flags&=~b_Font;
+    }
+#endif
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  FvwmEvent.c
+  
+  event_entry event_table[MAX_MESSAGES+MAX_BUILTIN] =
+{
+  { "new_page",	-1 },
+  { "new_desk", 0 },
+  { "old_add_window", 0 },
+  { "raise_window", 0 },
+  { "lower_window", 0 },
+  { "old_configure_window", 0 },
+  { "focus_change", 0 },
+  { "destroy_window", 0 },
+  { "iconify", 0 },
+  { "deiconify", 0 },
+  { "window_name", 0 },
+  { "icon_name", 0 },
+  { "res_class", 0 },
+  { "res_name", 0 },
+  { "end_windowlist", -1 },
+  { "icon_location", 0 },
+  { "map", 0 },
+  { "error", -1 },
+  { "config_info", -1 },
+  { "end_config_info", -1 },
+  { "icon_file", -1 },
+  { "default_icon", -1 },
+  { "string", -1 },
+  { "mini_icon", -1 },
+  { "windowshade", 0 },
+  { "dewindowshade", 0 },
+  { "lockonsend", -1 },
+  { "sendconfig", -1 },
+  { "restack", -1 },
+  { "add_window", 0 },
+  { "configure_window", 0 },
+#ifdef M_BELL
+  { "beep", -1 },
+#endif
+#ifdef M_TOGGLEPAGE
+  { "toggle_paging", -1 },
+#endif
+  /* add builtins here */
+  { "startup", -1 },
+  { "shutdown", -1 },
+  { "unknown", -1}
+};
+
+
+#ifdef HAVE_RPLAY
+
+  if (rplay_fd != -1)		/* this is the sign that rplay is used */
+    {
+      if (rplay_table[event])
+	{
+	  if (rplay(rplay_fd, rplay_table[event]) >= 0)
+	    last_time = now;
+	  else
+	    rplay_perror("rplay");
+	}
+    }
+  else 	/* avoid invalid second execute */
+#endif
+    if (action_table[event])
+      {
+      	// c
+      }
+      
+      
+      
+      #ifdef HAVE_RPLAY
+	case 5:
+	  if (token && (*token == '$'))		       /* RPlayHost */
+	  {			 /* Check for $HOSTDISPLAY */
+	    char *c1= (char *)getenv(token+1), *c2= host;
+	    while (c1 && *c1 != ':')
+	      *c2++ = *c1++;
+	    *c2 = '\0';
+	  }
+	  else
+	    strcpy(host, token);
+	  break;
+
+	case 6:
+	  if (token)
+	    priority = atoi(token);
+	  break; /* RplayPriority */
+
+	case 7:
+	  if (token)
+	    volume = atoi(token);
+	  break; /* RplayVolume */
+#endif
+
+
+
+
+ReadXServer.c
+
+#if 0
+      case SelectionClear:
+         selection_clear ();
+        break;
+      case SelectionNotify:
+        selection_paste ();
+        break;
+      case SelectionRequest:
+         selection_send ();
+        break;
+#endif
+
+
+gtkpixmapmenitem.h
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+          
+          
+          
+          
+
+    
+    
+    
+    fvwm.c
+    
+    
+    #ifdef MINI_ICONS
+  case M_MINI_ICON:
+    ConsoleDebug (FVWM, "DEBUG::M_MINI_ICON\n");
+    mini_icon (body);
+    break;
+#endif
+
+
+		 
+		 
+		 
+		 
+		 xmanager.c
+		 
+		 #ifdef MINI_ICONS
+  if (man->draw_icons && win && win->pic.picture) {
+    /* If no window, then icon_* aren't used, so doesn't matter what
+       they are */
+    g->icon_w = min (win->pic.width, g->button_h);
+    g->icon_h = min (g->button_h - 4, win->pic.height);
+    icon_pad  = center_padding (g->icon_h, g->button_h);
+    g->icon_x = g->button_x + 4;
+    g->icon_y = g->button_y + icon_pad;
+  }
+  else {
+#endif
+    g->icon_h = man->geometry.boxheight - 8;
+    g->icon_w = g->icon_h;
+
+    icon_pad = center_padding (g->icon_h, g->button_h);
+    g->icon_x = g->button_x + icon_pad;
+    g->icon_y = g->button_y + icon_pad;
+#ifdef MINI_ICONS
+  }
+#endif
+
+
+
+
+/* [BV 16-Apr-97] Mini Icons work on black-and-white too */
+#ifdef MINI_ICONS
+  if (man->draw_icons && win->pic.picture) {
+    if (iconified == 0 && man->draw_icons != 2) {
+      if (!button_already_cleared) {
+	XFillRectangle (theDisplay, man->theWindow,
+			man->backContext[contextId], g->icon_x, g->icon_y,
+			g->icon_w, g->icon_h);
+      }
+    }
+    else {
+      gcm = GCClipMask|GCClipXOrigin|GCClipYOrigin;
+      gcv.clip_mask = win->pic.mask;
+      gcv.clip_x_origin = g->icon_x;
+      gcv.clip_y_origin = g->icon_y;
+      XChangeGC (theDisplay, man->hiContext[contextId], gcm, &gcv);
+
+      XCopyArea(theDisplay, win->pic.picture, man->theWindow,
+		man->hiContext[contextId], 0, 0, g->icon_w, g->icon_h,
+		g->icon_x, g->icon_y);
+      gcm = GCClipMask;
+      gcv.clip_mask = None;
+      XChangeGC(theDisplay, man->hiContext[contextId], gcm, &gcv);
+    }
+  }
+  else {
+#endif
+    if (Pdepth > 2) {
+      draw_3d_icon (man, box, g, iconified, contextId);
+    }
+    else {
+      if (iconified == 0) {
+	XFillArc (theDisplay, man->theWindow, man->backContext[contextId],
+		  g->icon_x, g->icon_y, g->icon_w, g->icon_h, 0, 360 * 64);
+      }
+      else {
+	XFillArc (theDisplay, man->theWindow, man->hiContext[contextId],
+		  g->icon_x, g->icon_y, g->icon_w, g->icon_h, 0, 360 * 64);
+      }
+    }
+#ifdef MINI_ICONS
+  }
+#endif
+
+
+    
+	      
+  
+  
+  
+  
+	      
+	      
+	      
+	      
+		
+		
+		
+		FvwmTaskBar.c
+		
+		
+		
+		#ifdef MINI_ICONS
+  case M_MINI_ICON:
+    if ((i = FindItem(&windows, body[0])) == -1) break;
+    p.picture = body[6];
+    p.mask    = body[7];
+    p.width   = body[3];
+    p.height  = body[4];
+    p.depth   = body[5];
+    UpdateItemPicture(&windows, i, &p);
+    if (UpdateButton(&buttons, i, NULL, DONT_CARE) != -1) {
+      UpdateButtonPicture(&buttons, i, &p);
+      redraw = 0;
+    }
+    break;
+#endif
+
+
+
+                     
+                     
+                     
+                     FvwmWharf.c
+                     
+                     
+                     if (!isspace(tline[Clength+1]))
+	fprintf(stderr,"%s:invalid option %s\n",MyName,tline);
+      else
+	match_string(&tline[Clength+1]);
+    }
+    else if((strncasecmp(tline,"ImagePath",9)==0))
+    {
+      CopyString(&imagePath,&tline[9]);
+    }
+#ifdef ENABLE_SOUND
+    else if((strncasecmp(tline,"*AudioDir",9)==0))
+    {
+      CopyString(&SoundPath,&tline[9]);
+    }
+    else if((strncasecmp(tline,"ModulePath",11)==0))
+    {
+      CopyString(&ModulePath,&tline[11]);
+    }
+#endif
+
+
+
+      

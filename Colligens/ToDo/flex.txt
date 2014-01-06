@@ -1,0 +1,308 @@
+
+
+
+
+// OK (, nos parametros)
+/*ARGSUSED*/
+#if (defined __STDC__ || defined __C99__FUNC__ \
+ || defined __cplusplus || defined _MSC_VER)
+static void
+yy_symbol_value_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep)
+#else
+static void
+yy_symbol_value_print (yyoutput, yytype, yyvaluep)
+ FILE *yyoutput;
+ int yytype;
+ YYSTYPE const * const yyvaluep;
+#endif
+{
+ if (!yyvaluep)
+ return;
+#ifdef YYPRINT
+ if (yytype < YYNTOKENS)
+ YYPRINT (yyoutput, yytoknum[yytype], *yyvaluep);
+#else
+ YYUSE (yyoutput);
+#endif
+ switch (yytype)
+ {
+ default:
+	break;
+ }
+}
+
+
+//OK
+#if (defined __STDC__ || defined __C99__FUNC__ \
+ || defined __cplusplus || defined _MSC_VER)
+static void
+yy_symbol_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep)
+#else
+static void
+yy_symbol_print (yyoutput, yytype, yyvaluep)
+ FILE *yyoutput;
+ int yytype;
+ YYSTYPE const * const yyvaluep;
+#endif
+{
+ if (yytype < YYNTOKENS)
+ YYFPRINTF (yyoutput, "token %s (", yytname[yytype]);
+ else
+ YYFPRINTF (yyoutput, "nterm %s (", yytname[yytype]);
+
+ yy_symbol_value_print (yyoutput, yytype, yyvaluep);
+ YYFPRINTF (yyoutput, ")");
+}
+
+
+
+OK
+#if (defined __STDC__ || defined __C99__FUNC__ \
+ || defined __cplusplus || defined _MSC_VER)
+static void
+yy_stack_print (yytype_int16 *yybottom, yytype_int16 *yytop)
+#else
+static void
+yy_stack_print (yybottom, yytop)
+ yytype_int16 *yybottom;
+ yytype_int16 *yytop;
+#endif
+{
+ YYFPRINTF (stderr, "Stack now");
+ for (; yybottom <= yytop; yybottom++)
+ {
+ int yybot = *yybottom;
+ YYFPRINTF (stderr, " %d", yybot);
+ }
+ YYFPRINTF (stderr, "\n");
+}
+
+
+
+
+
+//OK
+#if (defined __STDC__ || defined __C99__FUNC__ \
+ || defined __cplusplus || defined _MSC_VER)
+static void
+yy_reduce_print (YYSTYPE *yyvsp, int yyrule)
+#else
+static void
+yy_reduce_print (yyvsp, yyrule)
+ YYSTYPE *yyvsp;
+ int yyrule;
+#endif
+{
+ int yynrhs = yyr2[yyrule];
+ int yyi;
+ unsigned long int yylno = yyrline[yyrule];
+ YYFPRINTF (stderr, "Reducing stack by rule %d (line %lu):\n",
+	 yyrule - 1, yylno);
+ /* The symbols being reduced. */
+ for (yyi = 0; yyi < yynrhs; yyi++)
+ {
+ YYFPRINTF (stderr, " $%d = ", yyi + 1);
+ yy_symbol_print (stderr, yyrhs[yyprhs[yyrule] + yyi],
+		 &(yyvsp[(yyi + 1) - (yynrhs)])
+		 		 );
+ YYFPRINTF (stderr, "\n");
+ }
+}
+
+
+
+//OK
+#ifdef YYERROR_VERBOSE
+
+#ifndef yystrlen
+#if defined __GLIBC__ && defined _STRING_H
+#define yystrlen strlen
+#else
+/* Return the length of YYSTR. */
+#if (defined __STDC__ || defined __C99__FUNC__ \
+ || defined __cplusplus || defined _MSC_VER)
+static YYSIZE_T
+yystrlen (const char *yystr)
+#else
+static YYSIZE_T
+yystrlen (yystr)
+ const char *yystr;
+#endif
+{
+ YYSIZE_T yylen;
+ for (yylen = 0; yystr[yylen]; yylen++)
+ continue;
+ return yylen;
+}
+#endif
+#endif
+
+
+//OK
+#ifndef yystpcpy
+#if defined __GLIBC__ && defined _STRING_H && defined _GNU_SOURCE
+#define yystpcpy stpcpy
+#else
+/* Copy YYSRC to YYDEST, returning the address of the terminating '\0' in
+ YYDEST. */
+#if (defined __STDC__ || defined __C99__FUNC__ \
+ || defined __cplusplus || defined _MSC_VER)
+static char *
+yystpcpy (char *yydest, const char *yysrc)
+#else
+static char *
+yystpcpy (yydest, yysrc)
+ char *yydest;
+ const char *yysrc;
+#endif
+{
+ char *yyd = yydest;
+ const char *yys = yysrc;
+
+ while ((*yyd++ = *yys++) != '\0')
+ continue;
+
+ return yyd - 1;
+}
+#endif
+#endif
+
+
+//OK
+/*ARGSUSED*/
+#if (defined __STDC__ || defined __C99__FUNC__ \
+ || defined __cplusplus || defined _MSC_VER)
+static void
+yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep)
+#else
+static void
+yydestruct (yymsg, yytype, yyvaluep)
+ const char *yymsg;
+ int yytype;
+ YYSTYPE *yyvaluep;
+#endif
+{
+ YYUSE (yyvaluep);
+
+ if (!yymsg)
+ yymsg = "Deleting";
+ YY_SYMBOL_PRINT (yymsg, yytype, yyvaluep, yylocationp);
+
+ switch (yytype)
+ {
+
+ default:
+	break;
+ }
+}
+
+
+
+//OK
+#ifdef YYPARSE_PARAM
+#if (defined __STDC__ || defined __C99__FUNC__ \
+ || defined __cplusplus || defined _MSC_VER)
+int
+yyparse (void *YYPARSE_PARAM)
+#else
+int
+yyparse (YYPARSE_PARAM)
+ void *YYPARSE_PARAM;
+#endif
+#else /* ! YYPARSE_PARAM */
+#if (defined __STDC__ || defined __C99__FUNC__ \
+ || defined __cplusplus || defined _MSC_VER)
+int
+yyparse (void)
+#else
+int
+yyparse ()
+
+#endif
+#endif
+{
+
+// method gigante..
+
+}
+
+
+------------------------
+scan.c
+
+// OK
+#ifndef YY_NO_INPUT
+#ifdef __cplusplus
+ static int yyinput (void)
+#else
+ static int input (void)
+#endif
+
+{
+	int c;
+ 
+	*(yy_c_buf_p) = (yy_hold_char);
+
+	if ( *(yy_c_buf_p) == YY_END_OF_BUFFER_CHAR )
+		{
+		/* yy_c_buf_p now points to the character we want to return.
+		 * If this occurs *before* the EOB characters, then it's a
+		 * valid NUL; if not, then we've hit the end of the buffer.
+		 */
+		if ( (yy_c_buf_p) < &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] )
+			/* This was really a NUL. */
+			*(yy_c_buf_p) = '\0';
+
+		else
+			{ /* need more input */
+			yy_size_t offset = (yy_c_buf_p) - (yytext_ptr);
+			++(yy_c_buf_p);
+
+			switch ( yy_get_next_buffer( ) )
+				{
+				case EOB_ACT_LAST_MATCH:
+					/* This happens because yy_g_n_b()
+					 * sees that we've accumulated a
+					 * token and flags that we need to
+					 * try matching the token before
+					 * proceeding. But for input(),
+					 * there's no matching to consider.
+					 * So convert the EOB_ACT_LAST_MATCH
+					 * to EOB_ACT_END_OF_FILE.
+					 */
+
+					/* Reset buffer status. */
+					yyrestart(yyin );
+
+					/*FALLTHROUGH*/
+
+				case EOB_ACT_END_OF_FILE:
+					{
+					if ( yywrap( ) )
+						return EOF;
+
+					if ( ! (yy_did_buffer_switch_on_eof) )
+						YY_NEW_FILE;
+#ifdef __cplusplus
+					return yyinput();
+#else
+					return input();
+#endif
+					}
+
+				case EOB_ACT_CONTINUE_SCAN:
+					(yy_c_buf_p) = (yytext_ptr) + offset;
+					break;
+				}
+			}
+		}
+
+	c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
+	*(yy_c_buf_p) = '\0';	/* preserve yytext */
+	(yy_hold_char) = *++(yy_c_buf_p);
+
+	YY_CURRENT_BUFFER_LVALUE->yy_at_bol = (c == '\n');
+
+	return c;
+}
+#endif	/* ifndef YY_NO_INPUT */

@@ -1,0 +1,582 @@
+expat.h
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+expat_external.h
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+xmlparser.c
+
+
+enum XML_Status XMLCALL
+XML_Parse(XML_Parser parser, const char *s, int len, int isFinal)
+{
+  switch (ps_parsing) {
+  case XML_SUSPENDED:
+    errorCode = XML_ERROR_SUSPENDED;
+    return XML_STATUS_ERROR;
+  case XML_FINISHED:
+    errorCode = XML_ERROR_FINISHED;
+    return XML_STATUS_ERROR;
+  case XML_INITIALIZED:
+    if (parentParser == NULL && !startParsing(parser)) {
+      errorCode = XML_ERROR_NO_MEMORY;
+      return XML_STATUS_ERROR;
+    }
+  default:
+    ps_parsing = XML_PARSING;
+  }
+
+  if (len == 0) {
+    ps_finalBuffer = (XML_Bool)isFinal;
+    if (!isFinal)
+      return XML_STATUS_OK;
+    positionPtr = bufferPtr;
+    parseEndPtr = bufferEnd;
+
+    /* If data are left over from last buffer, and we now know that these
+       data are the final chunk of input, then we have to check them again
+       to detect errors based on that fact.
+    */
+    errorCode = processor(parser, bufferPtr, parseEndPtr, &bufferPtr);
+
+    if (errorCode == XML_ERROR_NONE) {
+      switch (ps_parsing) {
+      case XML_SUSPENDED:
+        XmlUpdatePosition(encoding, positionPtr, bufferPtr, &position);
+        positionPtr = bufferPtr;
+        return XML_STATUS_SUSPENDED;
+      case XML_INITIALIZED:
+      case XML_PARSING:
+        ps_parsing = XML_FINISHED;
+        /* fall through */
+      default:
+        return XML_STATUS_OK;
+      }
+    }
+    eventEndPtr = eventPtr;
+    processor = errorProcessor;
+    return XML_STATUS_ERROR;
+  }
+#ifndef XML_CONTEXT_BYTES
+  else if (bufferPtr == bufferEnd) {
+    const char *end;
+    int nLeftOver;
+    enum XML_Error result;
+    parseEndByteIndex += len;
+    positionPtr = s;
+    ps_finalBuffer = (XML_Bool)isFinal;
+
+    errorCode = processor(parser, s, parseEndPtr = s + len, &end);
+
+    if (errorCode != XML_ERROR_NONE) {
+      eventEndPtr = eventPtr;
+      processor = errorProcessor;
+      return XML_STATUS_ERROR;
+    }
+    else {
+      switch (ps_parsing) {
+      case XML_SUSPENDED:
+        result = XML_STATUS_SUSPENDED;
+        break;
+      case XML_INITIALIZED:
+      case XML_PARSING:
+        if (isFinal) {
+          ps_parsing = XML_FINISHED;
+          return XML_STATUS_OK;
+        }
+      /* fall through */
+      default:
+        result = XML_STATUS_OK;
+      }
+    }
+
+    XmlUpdatePosition(encoding, positionPtr, end, &position);
+    nLeftOver = s + len - end;
+    if (nLeftOver) {
+      if (buffer == NULL || nLeftOver > bufferLim - buffer) {
+        /* FIXME avoid integer overflow */
+        char *temp;
+        temp = (buffer == NULL
+                ? (char *)MALLOC(len * 2)
+                : (char *)REALLOC(buffer, len * 2));
+        if (temp == NULL) {
+          errorCode = XML_ERROR_NO_MEMORY;
+          eventPtr = eventEndPtr = NULL;
+          processor = errorProcessor;
+          return XML_STATUS_ERROR;
+        }
+        buffer = temp;
+        bufferLim = buffer + len * 2;
+      }
+      memcpy(buffer, end, nLeftOver);
+    }
+    bufferPtr = buffer;
+    bufferEnd = buffer + nLeftOver;
+    positionPtr = bufferPtr;
+    parseEndPtr = bufferEnd;
+    eventPtr = bufferPtr;
+    eventEndPtr = bufferPtr;
+    return result;
+  }
+#endif  /* not defined XML_CONTEXT_BYTES */
+  else {
+    void *buff = XML_GetBuffer(parser, len);
+    if (buff == NULL)
+      return XML_STATUS_ERROR;
+    else {
+      memcpy(buff, s, len);
+      return XML_ParseBuffer(parser, len, isFinal);
+    }
+  }
+}
+
+
+
+
+static const XML_Feature features[] = {
+    {XML_FEATURE_SIZEOF_XML_CHAR,  XML_L("sizeof(XML_Char)"),
+     sizeof(XML_Char)},
+    {XML_FEATURE_SIZEOF_XML_LCHAR, XML_L("sizeof(XML_LChar)"),
+     sizeof(XML_LChar)},
+#ifdef XML_UNICODE
+    {XML_FEATURE_UNICODE,          XML_L("XML_UNICODE"), 0},
+#endif
+#ifdef XML_UNICODE_WCHAR_T
+    {XML_FEATURE_UNICODE_WCHAR_T,  XML_L("XML_UNICODE_WCHAR_T"), 0},
+#endif
+#ifdef XML_DTD
+    {XML_FEATURE_DTD,              XML_L("XML_DTD"), 0},
+#endif
+#ifdef XML_CONTEXT_BYTES
+    {XML_FEATURE_CONTEXT_BYTES,    XML_L("XML_CONTEXT_BYTES"),
+     XML_CONTEXT_BYTES},
+#endif
+#ifdef XML_MIN_SIZE
+    {XML_FEATURE_MIN_SIZE,         XML_L("XML_MIN_SIZE"), 0},
+#endif
+#ifdef XML_NS
+    {XML_FEATURE_NS,               XML_L("XML_NS"), 0},
+#endif
+#ifdef XML_LARGE_SIZE
+    {XML_FEATURE_LARGE_SIZE,       XML_L("XML_LARGE_SIZE"), 0},
+#endif
+#ifdef XML_ATTR_INFO
+    {XML_FEATURE_ATTR_INFO,        XML_L("XML_ATTR_INFO"), 0},
+#endif
+    {XML_FEATURE_END,              NULL, 0}
+  };
+
+
+
+if (startCdataSectionHandler)
+          startCdataSectionHandler(handlerArg);
+#if 0
+        /* Suppose you doing a transformation on a document that involves
+           changing only the character data.  You set up a defaultHandler
+           and a characterDataHandler.  The defaultHandler simply copies
+           characters through.  The characterDataHandler does the
+           transformation and writes the characters out escaping them as
+           necessary.  This case will fail to work if we leave out the
+           following two lines (because & and < inside CDATA sections will
+           be incorrectly escaped).
+
+           However, now we have a start/endCdataSectionHandler, so it seems
+           easier to let the user deal with this.
+        */
+        else if (characterDataHandler)
+          characterDataHandler(handlerArg, dataBuf, 0);
+#endif
+        else if (defaultHandler)
+          reportDefault(parser, enc, s, next);
+
+
+
+if (endCdataSectionHandler)
+       endCdataSectionHandler(handlerArg);
+#if 0
+     /* see comment under XML_TOK_CDATA_SECT_OPEN */
+     else if (characterDataHandler)
+       characterDataHandler(handlerArg, dataBuf, 0);
+#endif
+     else if (defaultHandler)
+       reportDefault(parser, enc, s, next);
+
+
+
+#ifdef XML_DTD
+    case XML_ROLE_TEXT_DECL:
+      {
+        enum XML_Error result = processXmlDecl(parser, 1, s, next);
+        if (result != XML_ERROR_NONE)
+          return result;
+        enc = encoding;
+        handleDefault = XML_FALSE;
+      }
+      break;
+#endif /* XML_DTD */
+
+
+
+      if (doctypeSysid == NULL)
+               return XML_ERROR_NO_MEMORY;
+             poolFinish(&tempPool);
+             handleDefault = XML_FALSE;
+           }
+     #ifdef XML_DTD
+           else
+             /* use externalSubsetName to make doctypeSysid non-NULL
+                for the case where no startDoctypeDeclHandler is set */
+             doctypeSysid = externalSubsetName;
+     #endif /* XML_DTD */
+
+
+
+
+
+
+
+
+           #ifdef XML_DTD
+    case XML_ROLE_IGNORE_SECT:
+      {
+        enum XML_Error result;
+        if (defaultHandler)
+          reportDefault(parser, enc, s, next);
+        handleDefault = XML_FALSE;
+        result = doIgnoreSection(parser, enc, &next, end, nextPtr, haveMore);
+        if (result != XML_ERROR_NONE)
+          return result;
+        else if (!next) {
+          processor = ignoreSectionProcessor;
+          return result;
+        }
+      }
+      break;
+#endif /* XML_DTD */
+
+
+
+
+#ifdef XML_DTD
+    case XML_ROLE_INNER_PARAM_ENTITY_REF:
+      dtd->hasParamEntityRefs = XML_TRUE;
+      if (!paramEntityParsing)
+        dtd->keepProcessing = dtd->standalone;
+      else {
+        const XML_Char *name;
+        ENTITY *entity;
+        name = poolStoreString(&dtd->pool, enc,
+                                s + enc->minBytesPerChar,
+                                next - enc->minBytesPerChar);
+        if (!name)
+          return XML_ERROR_NO_MEMORY;
+        entity = (ENTITY *)lookup(parser, &dtd->paramEntities, name, 0);
+        poolDiscard(&dtd->pool);
+        /* first, determine if a check for an existing declaration is needed;
+           if yes, check that the entity exists, and that it is internal,
+           otherwise call the skipped entity handler
+        */
+        if (prologState.documentEntity &&
+            (dtd->standalone
+             ? !openInternalEntities
+             : !dtd->hasParamEntityRefs)) {
+          if (!entity)
+            return XML_ERROR_UNDEFINED_ENTITY;
+          else if (!entity->is_internal)
+            return XML_ERROR_ENTITY_DECLARED_IN_PE;
+        }
+        else if (!entity) {
+          dtd->keepProcessing = dtd->standalone;
+          /* cannot report skipped entities in declarations */
+          if ((role == XML_ROLE_PARAM_ENTITY_REF) && skippedEntityHandler) {
+            skippedEntityHandler(handlerArg, name, 1);
+            handleDefault = XML_FALSE;
+          }
+          break;
+        }
+        if (entity->open)
+          return XML_ERROR_RECURSIVE_ENTITY_REF;
+        if (entity->textPtr) {
+          enum XML_Error result;
+          XML_Bool betweenDecl =
+            (role == XML_ROLE_PARAM_ENTITY_REF ? XML_TRUE : XML_FALSE);
+          result = processInternalEntity(parser, entity, betweenDecl);
+          if (result != XML_ERROR_NONE)
+            return result;
+          handleDefault = XML_FALSE;
+          break;
+        }
+        if (externalEntityRefHandler) {
+          dtd->paramEntityRead = XML_FALSE;
+          entity->open = XML_TRUE;
+          if (!externalEntityRefHandler(externalEntityRefHandlerArg,
+                                        0,
+                                        entity->base,
+                                        entity->systemId,
+                                        entity->publicId)) {
+            entity->open = XML_FALSE;
+            return XML_ERROR_EXTERNAL_ENTITY_HANDLING;
+          }
+          entity->open = XML_FALSE;
+          handleDefault = XML_FALSE;
+          if (!dtd->paramEntityRead) {
+            dtd->keepProcessing = dtd->standalone;
+            break;
+          }
+        }
+        else {
+          dtd->keepProcessing = dtd->standalone;
+          break;
+        }
+      }
+#endif /* XML_DTD */
+
+
+
+
+#ifdef XML_DTD
+  if (entity->is_param) {
+    int tok = XmlPrologTok(internalEncoding, textStart, textEnd, &next);
+    result = doProlog(parser, internalEncoding, textStart, textEnd, tok,
+                      next, &next, XML_FALSE);
+  }
+  else
+#endif /* XML_DTD */
+    result = doContent(parser, tagLevel, internalEncoding, textStart,
+                       textEnd, &next, XML_FALSE);
+
+
+
+#ifdef XML_DTD
+  if (entity->is_param) {
+    int tok = XmlPrologTok(internalEncoding, textStart, textEnd, &next);
+    result = doProlog(parser, internalEncoding, textStart, textEnd, tok,
+                      next, &next, XML_FALSE);
+  }
+  else
+#endif /* XML_DTD */
+    result = doContent(parser, openEntity->startTagLevel, internalEncoding,
+                       textStart, textEnd, &next, XML_FALSE);
+
+
+
+#ifdef XML_DTD
+  if (entity->is_param) {
+    int tok;
+    processor = prologProcessor;
+    tok = XmlPrologTok(encoding, s, end, &next);
+    return doProlog(parser, encoding, s, end, tok, next, nextPtr,
+                    (XML_Bool)!ps_finalBuffer);
+  }
+  else
+#endif /* XML_DTD */
+  {
+    processor = contentProcessor;
+    /* see externalEntityContentProcessor vs contentProcessor */
+    return doContent(parser, parentParser ? 1 : 0, encoding, s, end,
+                     nextPtr, (XML_Bool)!ps_finalBuffer);
+  }
+
+
+
+
+
+
+
+
+
+  xmlrole.h
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+  }
+#endif
+
+
+
+
+  xmltok_impl.c
+
+#ifdef XML_NS
+    case BT_COLON:
+      /* no need to check qname syntax here,
+         since end-tag must match exactly */
+      ptr += MINBPC(enc);
+      break;
+#endif
+
+
+
+#ifdef XML_NS
+    case BT_COLON:
+      if (hadColon) {
+        *nextTokPtr = ptr;
+        return XML_TOK_INVALID;
+      }
+      hadColon = 1;
+      ptr += MINBPC(enc);
+      if (ptr == end)
+        return XML_TOK_PARTIAL;
+      switch (BYTE_TYPE(enc, ptr)) {
+      CHECK_NMSTRT_CASES(enc, ptr, end, nextTokPtr)
+      default:
+        *nextTokPtr = ptr;
+        return XML_TOK_INVALID;
+      }
+      break;
+#endif
+
+
+
+
+#ifdef XML_NS
+    case BT_COLON:
+      if (hadColon) {
+        *nextTokPtr = ptr;
+        return XML_TOK_INVALID;
+      }
+      hadColon = 1;
+      ptr += MINBPC(enc);
+      if (ptr == end)
+        return XML_TOK_PARTIAL;
+      switch (BYTE_TYPE(enc, ptr)) {
+      CHECK_NMSTRT_CASES(enc, ptr, end, nextTokPtr)
+      default:
+        *nextTokPtr = ptr;
+        return XML_TOK_INVALID;
+      }
+      break;
+#endif
+
+
+#ifdef XML_NS
+  case BT_COLON:
+#endif
+
+
+
+#ifdef XML_NS
+    case BT_COLON:
+      ptr += MINBPC(enc);
+      switch (tok) {
+      case XML_TOK_NAME:
+        if (ptr == end)
+          return XML_TOK_PARTIAL;
+        tok = XML_TOK_PREFIXED_NAME;
+        switch (BYTE_TYPE(enc, ptr)) {
+        CHECK_NAME_CASES(enc, ptr, end, nextTokPtr)
+        default:
+          tok = XML_TOK_NMTOKEN;
+          break;
+        }
+        break;
+      case XML_TOK_PREFIXED_NAME:
+        tok = XML_TOK_NMTOKEN;
+        break;
+      }
+      break;
+#endif
+
+
+#ifdef XML_NS
+    case BT_COLON:
+#endif
+
+
+#ifdef XML_NS
+    case BT_COLON:
+#endif
+
+
+#ifdef XML_NS
+      case BT_COLON:
+#endif
+
+
+#ifdef XML_NS
+    case BT_COLON:
+#endif
+
+
+
+
+
+    	xmltok.c
+
+    	static const struct normal_encoding little2_encoding = {
+    	  { VTABLE, 2, 0,
+    	#if BYTEORDER == 1234
+    	    1
+    	#else
+    	    0
+    	#endif
+    	  },
+    	  {
+    	#define BT_COLON BT_NMSTRT
+    	//#include "asciitab.h"
+    	#undef BT_COLON
+    	//#include "latin1tab.h"
+    	  },
+    	  STANDARD_VTABLE(little2_)
+    	};
+
+
+
+    	static const struct normal_encoding big2_encoding_ns = {
+    	  { VTABLE, 2, 0,
+    	#if BYTEORDER == 4321
+    	  1
+    	#else
+    	  0
+    	#endif
+    	  },
+    	  {
+    	//#include "asciitab.h"
+    	//#include "latin1tab.h"
+    	  },
+    	  STANDARD_VTABLE(big2_)
+    	};
+
+
+
+
+
+
+
+xmltok.h
+
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
+#ifdef __cplusplus
+}
+#endif

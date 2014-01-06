@@ -1,0 +1,188 @@
+
+	
+	
+	
+	
+gzip.c
+
+	    
+	    
+	    // FALTA
+    static char  *help_msg[] = {
+#if O_BINARY
+ " -a --ascii       ascii text; convert end-of-lines using local conventions",
+#endif
+ " -c --stdout      write on standard output, keep original files unchanged",
+ " -d --decompress  decompress",
+/* -e --encrypt     encrypt */
+ " -f --force       force overwrite of output file and compress links",
+ " -h --help        give this help",
+/* -k --pkzip       force output in pkzip format */
+ " -l --list        list compressed file contents",
+ " -L --license     display software license",
+#ifdef UNDOCUMENTED
+ " -m --no-time     do not save or restore the original modification time",
+ " -M --time        save or restore the original modification time",
+#endif
+ " -n --no-name     do not save or restore the original name and time stamp",
+ " -N --name        save or restore the original name and time stamp",
+ " -q --quiet       suppress all warnings",
+#ifndef NO_DIR
+ " -r --recursive   operate recursively on directories",
+#endif
+ " -S .suf  --suffix .suf     use suffix .suf on compressed files",
+ " -t --test        test compressed file integrity",
+ " -v --verbose     verbose mode",
+ " -V --version     display version number",
+ " -1 --fast        compress faster",
+ " -9 --best        compress better",
+#ifdef LZW
+ " -Z --lzw         produce output compatible with old compress",
+ " -b --bits maxbits   max number of bits per code (implies -Z)",
+#endif
+ " file...          files to (de)compress. If none given, use standard input.",
+  0};
+  
+  
+  //OK
+# ifdef NO_PIPE_TIMESTAMP
+	if (S_ISREG(istat.st_mode))
+# endif
+	    time_stamp = istat.st_mtime;
+	    
+	    
+	//MANUAL   (PROBLEMA COM A IMPLEMENTACAO DO IF STMT OPTIONS) 
+	if (test) {
+	    fprintf(stderr, " OK\n");
+
+	} else if (!decompress) {
+	    display_ratio(bytes_in-(bytes_out-header_bytes), bytes_in, stderr);
+	    fprintf(stderr, "\n");
+#ifdef DISPLAY_STDIN_RATIO
+	} else {
+	    display_ratio(bytes_out-(bytes_in-header_bytes), bytes_out,stderr);
+	    fprintf(stderr, "\n");
+#endif
+	}
+	
+	
+	//MANUAL
+	#ifndef NO_DIR
+	if (recursive) {
+	    struct stat st;
+	    st = istat;
+	    treat_dir(iname);
+	    /* Warning: ifname is now garbage */
+#  ifndef NO_UTIME
+	    reset_times (iname, &st);
+#  endif
+	} else
+#endif
+	WARN((stderr,"%s: %s is a directory -- ignored\n", progname, ifname));
+	
+	
+	
+	//MANUAL
+	static char *known_suffixes[] =
+       {z_suffix, ".gz", ".z", ".taz", ".tgz", "-gz", "-z", "_z",
+#ifdef MAX_EXT_CHARS
+          "z",
+#endif
+          NULL};
+          
+          
+  
+	    
+	   
+	    
+	    
+	    
+	    inflate.c
+	    
+	    
+    
+    
+    //MANUAL
+    if (i == 1) {
+      fprintf(stderr, " incomplete distance tree\n");
+#ifdef PKZIP_BUG_WORKAROUND
+      i = 0;
+    }
+#else
+      huft_free(td);
+    }
+    huft_free(tl);
+    return i;                   /* incomplete code set */
+#endif
+
+
+// MANUAL
+#if !defined(NOMEMCPY) && !defined(DEBUG)
+        if (w - d >= e)         /* (this test assumes unsigned comparison) */
+        {
+          memcpy(slide + w, slide + d, e);
+          w += e;
+          d += e;
+        }
+        else                      /* do it slow to avoid memcpy() overlap */
+#endif /* !NOMEMCPY */
+          do {
+            slide[w++] = slide[d++];
+	    Tracevv((stderr, "%c", slide[w-1]));
+          } while (--e);
+          
+          
+          
+          
+          trees.c
+          
+          
+          // MANUAL
+          #ifdef FORCE_METHOD
+    if (level == 1 && eof && compressed_len == 0L) { /* force stored file */
+#else
+    if (stored_len <= opt_lenb && eof && compressed_len == 0L && seekable()) {
+#endif
+        /* Since LIT_BUFSIZE <= 2*WSIZE, the input data must be there: */
+        if (buf == (char*)0) error ("block vanished");
+
+        copy_block(buf, (unsigned)stored_len, 0); /* without header */
+        compressed_len = stored_len << 3;
+        *file_method = STORED;
+
+#ifdef FORCE_METHOD
+    } else if (level == 2 && buf != (char*)0) { /* force stored block */
+#else
+    } else if (stored_len+4 <= opt_lenb && buf != (char*)0) {
+                       /* 4: two words for the lengths */
+#endif
+ /* The test buf != NULL is only necessary if LIT_BUFSIZE > WSIZE.
+         * Otherwise we can't have processed more than WSIZE input bytes since
+         * the last block flush, because compression would have been
+         * successful. If LIT_BUFSIZE <= WSIZE, it is never too late to
+         * transform a block into a stored block.
+         */
+        send_bits((STORED_BLOCK<<1)+eof, 3);  /* send block type */
+        compressed_len = (compressed_len + 3 + 7) & ~7L;
+        compressed_len += (stored_len + 4) << 3;
+
+        copy_block(buf, (unsigned)stored_len, 1); /* with header */
+
+#ifdef FORCE_METHOD
+    } else if (level == 3) { /* force static trees */
+#else
+    } else if (static_lenb == opt_lenb) {
+#endif
+        send_bits((STATIC_TREES<<1)+eof, 3);
+        compress_block((ct_data near *)static_ltree, (ct_data near *)static_dtree);
+        compressed_len += 3 + static_len;
+    } else {
+        send_bits((DYN_TREES<<1)+eof, 3);
+        send_all_trees(l_desc.max_code+1, d_desc.max_code+1, max_blindex+1);
+        compress_block((ct_data near *)dyn_ltree, (ct_data near *)dyn_dtree);
+        compressed_len += 3 + opt_len;
+    }
+    
+    
+    
+    

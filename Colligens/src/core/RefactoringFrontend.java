@@ -74,8 +74,6 @@ public class RefactoringFrontend {
 
 		// FASTER
 		AST ast = parser.parserMain(in, myParserOptions);
-		System.out.println(ast);
-		System.out.println();
 
 		tree.Node myAst = new TranslationUnit();
 		new ASTGenerator().generate(ast, myAst);
@@ -153,7 +151,7 @@ public class RefactoringFrontend {
 			e.printStackTrace();
 		}
 
-		// TODO uncrustify exite outro opção para ele?
+		// TODO uncrustify exite outra opção para ele?
 		try {
 			Runtime.getRuntime().exec(
 					"/usr/bin/uncrustify -o " + outputFilePath

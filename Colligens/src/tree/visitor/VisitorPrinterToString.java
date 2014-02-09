@@ -244,11 +244,11 @@ public class VisitorPrinterToString implements Visitor{
 	}
 	
 	public void run (StructDeclaration node){
-		System.out.println("{");
+		//System.out.println("{");
 		for (int i = 0; i < node.getChildren().size(); i++){
 			node.getChildren().get(i).accept(this);
 		}
-		System.out.println("}");
+		//System.out.println("}");
 	}
 	
 	public void run (StructDeclarator node){
@@ -750,10 +750,11 @@ public class VisitorPrinterToString implements Visitor{
 	}
 	
 	public void run (StructOrUnionSpecifier node){
-		System.out.print(node.getName() + " ");
+		System.out.print(node.getName() + " {\n");
 		for (int i = 0; i < node.getChildren().size(); i++){
 			node.getChildren().get(i).accept(this);
 		}
+		System.out.print("} ");
 		
 		/*boolean inAnotherStruct = false;
 		

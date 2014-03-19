@@ -19,20 +19,56 @@ import de.fosd.typechef.parser.c.ParserMain;
 
 public class GeneralFrontend {
 
-	public static tree.Node getAST(String filePath, Collection<String> includes)
+	public static tree.Node getAST(String filePath,
+			Collection<String> includes, Collection<String> includesPath)
 			throws OptionException {
 		FrontendOptions myParserOptions = new FrontendOptionsWithConfigFiles();
 		ArrayList<String> paramters = new ArrayList<String>();
 
 		paramters.add("--lexNoStdout");
+		paramters.add("--parse");
 
-		for (Iterator<String> iterator = includes.iterator(); iterator
-				.hasNext();) {
-			paramters.add("-h");
-			paramters.add(iterator.next());
+		if (includes != null) {
+			for (Iterator<String> iterator = includes.iterator(); iterator
+					.hasNext();) {
+				paramters.add("-h");
+				paramters.add(iterator.next());
+			}
 		}
-
+		if (includesPath != null) {
+			for (Iterator<String> iterator = includesPath.iterator(); iterator
+					.hasNext();) {
+				paramters.add("-I");
+				paramters.add(iterator.next());
+			}
+		}
 		paramters.add(filePath);
+
+		String[] paramterArray = paramters
+				.toArray(new String[paramters.size()]);
+
+		myParserOptions.parseOptions(paramterArray);
+
+		ParserMain parser = new ParserMain(new CParser(null, false));
+
+		TokenReader<CToken, CTypeContext> in = Lex.lex(myParserOptions);
+
+		// FASTER
+		AST ast = parser.parserMain(in, myParserOptions);
+
+		tree.Node myAst = new TranslationUnit();
+		if (ast != null) {
+			new ASTGenerator().generate(ast, myAst);
+
+			myAst.accept(new VisitorASTOrganizer());
+		}
+		return myAst;
+	}
+
+	public static tree.Node getAST(Collection<String> paramters)
+			throws OptionException {
+
+		FrontendOptions myParserOptions = new FrontendOptionsWithConfigFiles();
 
 		String[] paramterArray = paramters
 				.toArray(new String[paramters.size()]);

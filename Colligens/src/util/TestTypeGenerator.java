@@ -26,12 +26,23 @@ public class TestTypeGenerator {
 		ArrayList<String> parameters = new ArrayList<String>();
 
 		parameters.add("-h");
-		parameters.add("stubs.h");
+		parameters.add("platform.h");
+		parameters.add("-I");
+		parameters.add("/usr/include/");
+		parameters.add("-I");
+		parameters.add("/usr/include/x86_64-linux-gnu");
+		parameters.add("-I");
+		parameters.add("/usr/lib/gcc/x86_64-linux-gnu/4.8/include");
+		parameters.add("-I");
+		parameters.add("/usr/lib/gcc/x86_64-linux-gnu/4.8/include-fixed");
+		parameters.add("-I");
+		parameters.add("/usr/local/include/");
 		parameters.add("--lexNoStdout");
 
 		parameters.add("input.c");
 
-		String[] paramterArray = parameters.toArray(new String[parameters.size()]);
+		String[] paramterArray = parameters.toArray(new String[parameters
+				.size()]);
 
 		myParserOptions.parseOptions(paramterArray);
 
@@ -42,27 +53,28 @@ public class TestTypeGenerator {
 		// FASTER
 		AST ast = parser.parserMain(in, myParserOptions);
 		System.out.println(ast);
-		//System.out.println();
+		// System.out.println();
 
 		tree.Node myAst = new TranslationUnit();
 		new ASTGenerator().generate(ast, myAst);
 
 		myAst.accept(new VisitorASTOrganizer());
 		myAst.accept(new PresenceConditionVisitor());
-		
+
 		TypeGeneratorVisitor typeGenerator = new TypeGeneratorVisitor();
 		myAst.accept(typeGenerator);
-		
+
 		List<Type> types = typeGenerator.getTypes();
-		for (Type type : types){
+		for (Type type : types) {
+			System.out.println("----------");
 			System.out.println(type.getPresenceCondition().toString());
+			System.out.println("=======");
 			System.out.println(type.getSource());
+			System.out.println("----------");
 		}
-		
 
 		System.out.println();
 
-		
 	}
 
 }
